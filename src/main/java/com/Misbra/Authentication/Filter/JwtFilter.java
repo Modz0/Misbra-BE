@@ -1,6 +1,6 @@
 package com.Misbra.Authentication.Filter;
 
-import com.Misbra.Authentication.Service.JwtService;
+import com.Misbra.Authentication.Services.JwtService;
 import com.Misbra.Authentication.Utils.AuthConstants;
 import com.Misbra.Service.UserService;
 import jakarta.servlet.FilterChain;

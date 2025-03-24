@@ -1,4 +1,4 @@
-package com.Misbra.Authentication.Service;
+package com.Misbra.Authentication.Services;
 
 import com.Misbra.Authentication.DTO.AuthRequest.PhoneLoginRequestDTO;
 import com.Misbra.Authentication.DTO.AuthRequest.PhoneRequestDTO;

@@ -155,4 +155,45 @@ public class UserServiceImp implements UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id " + id));
         return userMapper.toDTO(User);
     }
+
+    @Override
+    public List<String> getAnsweredQuestions(String userId) {
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "User ID cannot be null");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "User with ID " + userId + " not found"));
+
+        // Return answered question IDs or an empty list if none found
+        return Optional.ofNullable(user.getAnsweredQuestionIds()).orElse(new ArrayList<>());
+    }
+
+    /**
+     * Records that a user has answered a specific question.
+     *
+     * @param userId     The user's unique identifier.
+     * @param questionsId The question's unique identifier.
+     */
+    @Override
+    public void addAnsweredQuestion(String userId, List<String> questionsId) {
+        if (userId == null || questionsId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "User ID and Question ID cannot be null");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "User with ID " + userId + " not found"));
+
+        // Use entity helper method for adding question
+        questionsId.forEach(user::addAnsweredQuestion);
+
+        // Save updated user
+        userRepository.save(user);
+    }
+
+
 }

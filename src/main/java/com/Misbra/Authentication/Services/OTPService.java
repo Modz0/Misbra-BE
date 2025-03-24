@@ -1,4 +1,4 @@
-package com.Misbra.Authentication.Service;
+package com.Misbra.Authentication.Services;
 
 import com.Misbra.Authentication.Utils.AuthConstants;
 import com.Misbra.Exception.Utils.ExceptionUtils;

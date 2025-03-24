@@ -5,7 +5,7 @@ import com.Misbra.Authentication.DTO.AuthRequest.PhoneLoginRequestDTO;
 import com.Misbra.Authentication.DTO.AuthRequest.PhoneRequestDTO;
 import com.Misbra.Authentication.DTO.AuthRequest.RegisterRequestDTO;
 import com.Misbra.Authentication.DTO.AuthResponse.AuthResponseDTO;
-import com.Misbra.Authentication.Service.AuthService;
+import com.Misbra.Authentication.Services.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -16,4 +16,7 @@ public interface UserService {
     Boolean existsByPhone(String phone);
     Optional<User> findByPhone(String phone);
 
+    List<String> getAnsweredQuestions(String userId);
+    void addAnsweredQuestion(String userId, List<String> questionId);
+
 }

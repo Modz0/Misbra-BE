@@ -1,4 +1,4 @@
-package com.Misbra.Authentication.Service;
+package com.Misbra.Authentication.Services;
 
 import com.Misbra.DTO.UserDTO;
 import com.Misbra.Entity.User;

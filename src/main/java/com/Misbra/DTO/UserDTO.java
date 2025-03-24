@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -17,11 +18,13 @@ public class UserDTO {
     private String userId;
     private String firstName;
     private String lastName;
-    private String email;
-    private List<String> visitedPlaces;
-    private RecordStatus recordStatus;
-    private String phone;
     private String password;
+    private String email;
+    private String phone;
+    private RecordStatus recordStatus;
     private RoleEnum role;
-    private boolean enabled ;
+    private boolean enabled;
+    // Only track answered questions
+    @Builder.Default
+    private List<String> answeredQuestionIds = new ArrayList<>();
 }

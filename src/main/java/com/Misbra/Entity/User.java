@@ -1,6 +1,5 @@
 package com.Misbra.Entity;
 
-
 import com.Misbra.Enum.RecordStatus;
 import com.Misbra.Enum.RoleEnum;
 import lombok.*;
@@ -12,6 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import software.amazon.awssdk.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -22,39 +22,50 @@ import java.util.List;
 @AllArgsConstructor
 public class User implements UserDetails { // Implement UserDetails
 
-        @Id
-        private String userId;
+    @Id
+    private String userId;
 
-       @NotNull
-       private String firstName;
+    @NotNull
+    private String firstName;
 
     @NotNull
     private String lastName;
 
-        @Indexed(unique = true)
-        private String email;
+    @Indexed(unique = true)
+    private String email;
 
-        @Getter
-        @Indexed(unique = true)
-        private String phone;
+    @Getter
+    @Indexed(unique = true)
+    private String phone;
 
-        private String password;
+    private String password;
 
-        private List<String> visitedPlaces;
+    // New field for tracking answered questions only
+    @Builder.Default
+    private List<String> answeredQuestionIds = new ArrayList<>();
 
-        private RecordStatus recordStatus;
+    private RecordStatus recordStatus;
 
-       private RoleEnum role;
+    private RoleEnum role;
 
-       @Builder.Default
-       private boolean enabled = true;
+    @Builder.Default
+    private boolean enabled = true;
 
-
-        // Required by Spring Security
-        @Override
-        public Collection<? extends GrantedAuthority> getAuthorities() {
-                return List.of(new SimpleGrantedAuthority(role.getDescription()));
+    // Helper method to add answered question
+    public void addAnsweredQuestion(String questionId) {
+        if (answeredQuestionIds == null) {
+            answeredQuestionIds = new ArrayList<>();
         }
+        if (!answeredQuestionIds.contains(questionId)) {
+            answeredQuestionIds.add(questionId);
+        }
+    }
+
+    // Required by Spring Security
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(role.getDescription()));
+    }
 
     @Override
     public String getUsername() {
@@ -62,13 +73,22 @@ public class User implements UserDetails { // Implement UserDetails
     }
 
     @Override
-      public boolean isAccountNonExpired() {
+    public boolean isAccountNonExpired() {
         return recordStatus == RecordStatus.ACTIVE;
-      }
+    }
 
-        @Override
-        public boolean isEnabled() {
-                return enabled;
-        }
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
 
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
 }
