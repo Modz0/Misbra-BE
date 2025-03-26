@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public interface S3Service {
 
-    PhotoDTO UploadImage(referenceType entityType, String entityId, MultipartFile file, String userId) throws IOException;
+    PhotoDTO UploadImage(referenceType entityType, String entityId, MultipartFile file) throws IOException;
 
     String generatePresignedUrl(String s3Key);
 }

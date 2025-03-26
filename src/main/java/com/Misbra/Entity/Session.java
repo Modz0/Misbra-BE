@@ -2,6 +2,7 @@ package com.Misbra.Entity;
 
 import com.Misbra.Component.SessionQuestions;
 import lombok.Data;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.List;
 @Data
 @Document(collection = "sessions")
 public class Session {
+    @Id
     private String sessionId;
     private String userId;
     private String team1Id;

@@ -20,4 +20,6 @@ public class Question {
     private Difficulty difficulty;
     private int points;
     private boolean isAnswered;
+    private String questionPhotoId;
+    private String answerPhotoId;
 }

@@ -49,13 +49,12 @@ public class PhotoServiceImp implements PhotoService {
      * @param type The type of reference (e.g. PLACE, MENU_ITEM).
      * @param referenceId The ID of the reference entity.
      * @param file The file to upload.
-     * @param userId The ID of the user uploading the photo.
      * @return The PhotoDTO representing the uploaded photo.
      * @throws IOException If an error occurs during file upload.
      */
     @Override
-    public PhotoDTO uploadPhoto(referenceType type, String referenceId, MultipartFile file, String userId) throws IOException {
-        PhotoDTO newPhoto = s3Service.UploadImage(type, referenceId, file, userId);
+    public PhotoDTO uploadPhoto(referenceType type, String referenceId, MultipartFile file) throws IOException {
+        PhotoDTO newPhoto = s3Service.UploadImage(type, referenceId, file);
         Photo entity = photoMapper.toEntity(newPhoto);
         entity = photoRepository.save(entity);
         return photoMapper.toDTO(entity);
@@ -67,14 +66,13 @@ public class PhotoServiceImp implements PhotoService {
      * @param type The type of reference (e.g. PLACE, MENU_ITEM).
      * @param referenceId The ID of the reference entity.
      * @param file The file to upload.
-     * @param userId The ID of the user uploading the photo.
      * @param reviewId The ID of the review associated with the photo.
      * @return The PhotoDTO representing the uploaded review photo.
      * @throws IOException If an error occurs during file upload.
      */
     @Override
-    public PhotoDTO uploadReviewPhoto(referenceType type, String referenceId, MultipartFile file, String userId, String reviewId) throws IOException {
-        PhotoDTO newPhoto = s3Service.UploadImage(type, referenceId, file, userId);
+    public PhotoDTO uploadReviewPhoto(referenceType type, String referenceId, MultipartFile file, String reviewId) throws IOException {
+        PhotoDTO newPhoto = s3Service.UploadImage(type, referenceId, file);
         newPhoto.setReviewId(reviewId);
         Photo entity = photoMapper.toEntity(newPhoto);
         photoRepository.save(entity);

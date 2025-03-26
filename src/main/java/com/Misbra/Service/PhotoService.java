@@ -10,9 +10,9 @@ import java.util.Map;
 
 public interface PhotoService {
 
-    PhotoDTO uploadPhoto(referenceType type, String referenceId, MultipartFile file, String userId) throws IOException;
+    PhotoDTO uploadPhoto(referenceType type, String referenceId, MultipartFile file) throws IOException;
 
-    PhotoDTO uploadReviewPhoto(referenceType type, String referenceId, MultipartFile file, String userId, String reviewId) throws IOException;
+    PhotoDTO uploadReviewPhoto(referenceType type, String referenceId, MultipartFile file, String reviewId) throws IOException;
 
     String getPresignedUrl(String photoId);
 

@@ -16,6 +16,10 @@ public class QuestionDTO {
     private Difficulty difficulty;
     private int points;
     private boolean isAnswered;
+    private String questionPhotoId;
+    private String answerPhotoId;
+    private String questionThumbnailUrl;
+    private String answerThumbnailUrl;
 
     // For client responses (doesn't include correct answer)
     public QuestionDTO hideAnswer() {

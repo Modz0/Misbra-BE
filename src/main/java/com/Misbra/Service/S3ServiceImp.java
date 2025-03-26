@@ -58,7 +58,7 @@ public class S3ServiceImp implements S3Service {
      * @throws IOException If an error occurs during file upload.
      */
     @Override
-    public PhotoDTO UploadImage(referenceType referenceType, String referenceId, MultipartFile file, String userId)
+    public PhotoDTO UploadImage(referenceType referenceType, String referenceId, MultipartFile file)
             throws IOException {
         // TODO: Make the null checks here
 
@@ -81,7 +81,6 @@ public class S3ServiceImp implements S3Service {
         // Create and populate PhotoDTO with metadata
         PhotoDTO photo = new PhotoDTO();
         photo.setS3key(s3Key);
-        photo.setUploadedByUserId(userId);
         photo.setUploadedDate(LocalDateTime.now());
         photo.setType(referenceType);
         photo.setReferenceId(referenceId);

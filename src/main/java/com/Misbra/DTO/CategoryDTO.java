@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CategoryDTO {
     private String categoryName;
+    private String description;
     private String categoryId;
     private String thumbnailPhotoId;
-
+    private String ThumbnailUrl;
 }

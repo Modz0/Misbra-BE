@@ -8,7 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,6 +66,30 @@ public class QuestionController {
             @RequestParam(defaultValue = "10") int limit,
     @RequestParam String difficulty) {
         return ResponseEntity.ok(questionService.getUnansweredQuestionsByCategory(userId, category, limit,difficulty));
+    }
+    @PostMapping("/{questionId}/add-photo")
+    public ResponseEntity<?> uploadQuestionPhotos(
+            @PathVariable String questionId,
+            @RequestParam("question-file") MultipartFile qFile,
+            @RequestParam("answer-file") MultipartFile aFile
+    ) {
+        try {
+            Map<String, String> result = new HashMap<>();
+
+            if (!qFile.isEmpty()) {
+                String questionImageUrl = questionService.uploadQuestionPhotos(questionId, qFile);
+                result.put("questionImageUrl", questionImageUrl);
+            }
+            if (!aFile.isEmpty()) {
+                String answerImageUrl = questionService.uploadAnswerPhotos(questionId, aFile);
+                result.put("answerImageUrl", answerImageUrl);
+            }
+
+            return ResponseEntity.ok(result.isEmpty() ? "OK" : result);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("File upload failed: " + e.getMessage());
+        }
     }
 
 

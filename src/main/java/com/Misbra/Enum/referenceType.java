@@ -8,7 +8,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum referenceType {
     QUESTION(1, "Question"),
-    CATEGORY(2, "Category");
+    CATEGORY(2, "Category"),
+    ANSWER(3,"Answer");
 
 
     private final int code;

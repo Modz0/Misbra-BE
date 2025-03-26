@@ -3,7 +3,9 @@ package com.Misbra.Service;
 import com.Misbra.DTO.QuestionDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +24,13 @@ public interface QuestionService {
 
 
     List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, String difficulty);
+
+    String uploadQuestionPhotos(String questionId, MultipartFile file) throws IOException;
+
+    String uploadAnswerPhotos(String questionId, MultipartFile file) throws IOException;
+
+    void setQuestionThumbnail(String questionId, String photoId);
+    void setAnswerThumbnail(String questionId, String photoId);
 
 
 }

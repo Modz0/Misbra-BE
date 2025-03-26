@@ -20,7 +20,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @GetMapping("/verify-register")
+    @PostMapping("/verify-register")
     public ResponseEntity<String> register(   @Valid @RequestBody PhoneRequestDTO phoneRequest){
 
         return ResponseEntity.ok(authService.register(phoneRequest));
