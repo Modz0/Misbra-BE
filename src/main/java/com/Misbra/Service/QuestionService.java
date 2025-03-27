@@ -1,6 +1,7 @@
 package com.Misbra.Service;
 
 import com.Misbra.DTO.QuestionDTO;
+import com.Misbra.Enum.Difficulty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,7 +24,7 @@ public interface QuestionService {
     Page<QuestionDTO> getQuestionsByCategory(String category, Pageable pageable);
 
 
-    List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, String difficulty);
+    List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty);
 
     String uploadQuestionPhotos(String questionId, MultipartFile file) throws IOException;
 

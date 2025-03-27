@@ -42,6 +42,12 @@ public class CategoryController {
         CategoryDTO category = categoryService.getCategoryById(id);
         return ResponseEntity.ok(category);
     }
+    @GetMapping("/category-list")
+    public ResponseEntity<List<CategoryDTO>> getCategoryList(@RequestParam List<String> categoryIds) {
+        List<CategoryDTO> category = categoryService.getListOfCategories(categoryIds);
+        return ResponseEntity.ok(category);
+    }
+
 
     @PostMapping
     public ResponseEntity<CategoryDTO> createCategory(@RequestBody CategoryDTO categoryDTO )  {

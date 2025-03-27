@@ -7,6 +7,7 @@ import com.Misbra.Exception.Validation.ValidationErrorDTO;
 import com.Misbra.Mapper.UserMapper;
 import com.Misbra.Repository.UserRepository;
 import com.Misbra.Utils.AuthMessageKeys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,6 +18,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class UserServiceImp implements UserService {
 
     final UserRepository userRepository;
@@ -188,6 +190,9 @@ public class UserServiceImp implements UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "User with ID " + userId + " not found"));
 
+
+        log.info("Adding answered questions: {}", questionsId);
+        log.info("Existing answered questions: {}", user.getPhone());
         // Use entity helper method for adding question
         questionsId.forEach(user::addAnsweredQuestion);
 

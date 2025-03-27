@@ -7,7 +7,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 @Builder
@@ -16,14 +19,19 @@ import java.util.List;
 public class SessionDTO {
     private String sessionId;
     private String userId;
-    private String team1Id;
-    private String team2Id;
+    private String team1name;
+    private String team2name;
     private int team1score;
     private int team2score;
+    private List<String> gameCategories;
 
     @Builder.Default
-    private List<String> gameCategories = new ArrayList<>();
+    private Map<String, List<SessionQuestions>> categoryQuestionsMap = new HashMap<>();
 
-    @Builder.Default
-    private List<SessionQuestions> gameQuestions = new ArrayList<>();
+//    // Method to get all questions as a flat list (derived property)
+//    public List<SessionQuestions> getGameQuestions() {
+//        return categoryQuestionsMap.values().stream()
+//                .flatMap(List::stream)
+//                .collect(Collectors.toList());
+//    }
 }

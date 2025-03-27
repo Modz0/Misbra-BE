@@ -1,6 +1,7 @@
 package com.Misbra.Controller;
 
 import com.Misbra.DTO.QuestionDTO;
+import com.Misbra.Enum.Difficulty;
 import com.Misbra.Service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -64,7 +65,7 @@ public class QuestionController {
             @RequestParam String userId,
             @RequestParam String category,
             @RequestParam(defaultValue = "10") int limit,
-    @RequestParam String difficulty) {
+    @RequestParam Difficulty difficulty) {
         return ResponseEntity.ok(questionService.getUnansweredQuestionsByCategory(userId, category, limit,difficulty));
     }
     @PostMapping("/{questionId}/add-photo")

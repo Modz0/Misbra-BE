@@ -5,6 +5,7 @@ import com.Misbra.DTO.PhotoDTO;
 import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.Entity.Category;
 import com.Misbra.Entity.Question;
+import com.Misbra.Enum.Difficulty;
 import com.Misbra.Enum.referenceType;
 import com.Misbra.Mapper.QuestionMapper;
 import com.Misbra.Repository.QuestionRepository;
@@ -183,8 +184,10 @@ public class QuestionServiceImpl implements QuestionService {
         return questions.map(questionMapper::toDTO);
     }
 
+
+
     @Override
-    public List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, String difficulty) {
+    public List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty) {
         // Get list of questions the user has already answered
         List<String> answeredQuestionIds = userService.getAnsweredQuestions(userId);
 

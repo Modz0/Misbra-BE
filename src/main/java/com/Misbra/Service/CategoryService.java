@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface CategoryService {
     Page<CategoryDTO> getAllCategories(Pageable pageable);
     CategoryDTO getCategoryById(String id);
+    List<CategoryDTO> getListOfCategories (List<String> categoryIds);
     CategoryDTO createCategory(CategoryDTO categoryDTO ) ;
     CategoryDTO updateCategory(String id, CategoryDTO categoryDTO);
     void deleteCategory(String id); // Add this method

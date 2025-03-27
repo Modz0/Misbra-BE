@@ -79,6 +79,21 @@ public class CategoryServiceImp implements CategoryService {
     }
 
     @Override
+     public  List<CategoryDTO> getListOfCategories (List<String> categoryIds) {
+
+        List<Category> categories = categoryRepository.findAllById(categoryIds);
+        List<CategoryDTO> categoryDTOS = categories.stream().map(categoryMapper::toDTO).collect(Collectors.toList());
+        for (CategoryDTO categoryDTO : categoryDTOS) {
+            if (categoryDTO.getThumbnailPhotoId() != null) {
+                String thumbnailUrl = photoService.getPresignedUrl(categoryDTO.getThumbnailPhotoId());
+                categoryDTO.setThumbnailUrl(thumbnailUrl);
+            }
+
+        }
+        return categoryDTOS;
+     }
+
+    @Override
     public CategoryDTO createCategory(CategoryDTO categoryDTO)  {
 
         Category category = categoryMapper.toEntity(categoryDTO);  // Use mapper

@@ -80,19 +80,15 @@ public class SessionController {
      * For each category, it includes 2 easy, 4 medium, and 2 hard questions.
      *
      * @param currentUser the authenticated user creating the session
-     * @param team1Id ID of the first team
-     * @param team2Id ID of the second team
-     * @param categories List of category names to include
+
      * @return ResponseEntity containing the created session with questions
      */
     @PostMapping("/with-questions")
     public ResponseEntity<SessionDTO> createSessionWithQuestions(
             @AuthenticationPrincipal User currentUser,
-            @RequestParam String team1Id,
-            @RequestParam String team2Id,
-            @RequestParam List<String> categories) {
+            @RequestBody SessionDTO session) {
         return new ResponseEntity<>(
-                sessionService.createSessionWithQuestions(team1Id, team2Id, currentUser.getUserId(), categories),
+                sessionService.createSessionWithQuestions(session.getTeam1name(), session.getTeam2name(), currentUser.getUserId(), session.getGameCategories()),
                 HttpStatus.CREATED
         );
     }

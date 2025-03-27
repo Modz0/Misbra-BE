@@ -4,19 +4,21 @@ import com.Misbra.Component.SessionQuestions;
 import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.DTO.SessionDTO;
 import com.Misbra.Entity.Session;
+import com.Misbra.Enum.Difficulty;
 import com.Misbra.Exception.Utils.ExceptionUtils;
 import com.Misbra.Mapper.SessionMapper;
 import com.Misbra.Repository.SessionRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class SessionServiceImp implements SessionService {
 
     private final SessionRepository sessionRepository;
@@ -38,6 +40,7 @@ public class SessionServiceImp implements SessionService {
         this.exceptionUtils = exceptionUtils;
         this.questionService = questionService;
         this.userService = userService;
+  
     }
 
     @Override
@@ -101,10 +104,17 @@ public class SessionServiceImp implements SessionService {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found with ID: " + sessionId));
 
-        session.getGameQuestions().add(sessionQuestion);
+        String categoryId = sessionQuestion.getCategoryId();
+
+        // Get or create the list for this category
+        List<SessionQuestions> categoryQuestions = session.getCategoryQuestionsMap()
+                .computeIfAbsent(categoryId, k -> new ArrayList<>());
+
+        categoryQuestions.add(sessionQuestion);
         Session updatedSession = sessionRepository.save(session);
         return sessionMapper.toDTO(updatedSession);
     }
+
 
     @Override
     public SessionDTO updateTeamScore(String sessionId, int teamNumber, int points) {
@@ -128,33 +138,41 @@ public class SessionServiceImp implements SessionService {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found with ID: " + sessionId));
 
-        // Find the question in the session
-        Optional<SessionQuestions> questionOptional = session.getGameQuestions().stream()
-                .filter(q -> q.getQuestionId().equals(questionId))
-                .findFirst();
+        // Find the question in any category
+        SessionQuestions foundQuestion = null;
+        for (List<SessionQuestions> questions : session.getCategoryQuestionsMap().values()) {
+            for (SessionQuestions question : questions) {
+                if (question.getQuestionId().equals(questionId)) {
+                    question.setAnswered(true);
+                    question.setAnsweredByTeam(teamId);
+                    question.setAnsweredCorrectly(correct);
 
-        if (questionOptional.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found in session");
+                    // Update team score if answered correctly
+                    if (correct) {
+                        if (teamId.equals(session.getTeam1name())) {
+                            session.setTeam1score(session.getTeam1score() + pointsAwarded);
+                        } else if (teamId.equals(session.getTeam2name())) {
+                            session.setTeam2score(session.getTeam2score() + pointsAwarded);
+                        }
+                    }
+
+                    foundQuestion = question;
+                    break;
+                }
+            }
+            if (foundQuestion != null) {
+                break;
+            }
         }
 
-        SessionQuestions question = questionOptional.get();
-        question.setAnswered(true);
-        question.setAnsweredByTeam(teamId);
-        question.setAnsweredCorrectly(correct);
-        question.setPointsAwarded(pointsAwarded);
-
-        // Update team score if answer was correct
-        if (correct) {
-            if (teamId.equals(session.getTeam1Id())) {
-                session.setTeam1score(session.getTeam1score() + pointsAwarded);
-            } else if (teamId.equals(session.getTeam2Id())) {
-                session.setTeam2score(session.getTeam2score() + pointsAwarded);
-            }
+        if (foundQuestion == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found in session");
         }
 
         Session updatedSession = sessionRepository.save(session);
         return sessionMapper.toDTO(updatedSession);
     }
+
 
     @Override
     public boolean deleteSession(String id) {
@@ -172,36 +190,38 @@ public class SessionServiceImp implements SessionService {
         // Create a new session with initial details
         SessionDTO sessionDTO = new SessionDTO();
         sessionDTO.setUserId(userId);
-        sessionDTO.setTeam1Id(team1Id);
-        sessionDTO.setTeam2Id(team2Id);
+        sessionDTO.setTeam1name(team1Id);
+        sessionDTO.setTeam2name(team2Id);
         sessionDTO.setTeam1score(0);
         sessionDTO.setTeam2score(0);
         sessionDTO.setGameCategories(categories);
+        sessionDTO.setCategoryQuestionsMap(new HashMap<>());
 
         // Save the initial session to get an ID
         Session session = sessionMapper.toEntity(sessionDTO);
         Session savedSession = sessionRepository.save(session);
         String sessionId = savedSession.getSessionId();
 
-        // For each category, get 8 questions (2 easy, 4 medium, 2 hard)
+        // For each category, get questions (2 easy, 4 medium, 2 hard)
         for (String category : categories) {
+            List<String> allQuestionIds = new ArrayList<>();
+
             // Get easy questions (2)
-            List<QuestionDTO> easyQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, "EASY");
-            addQuestionsToSession(sessionId, easyQuestions, category);
+            List<QuestionDTO> easyQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, Difficulty.EASY);
+            addQuestionsToSession(sessionId, easyQuestions, category, Difficulty.EASY);
+            allQuestionIds.addAll(easyQuestions.stream().map(QuestionDTO::getQuestionId).toList());
 
             // Get medium questions (4)
-            List<QuestionDTO> mediumQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 4, "MEDIUM");
-            addQuestionsToSession(sessionId, mediumQuestions, category);
+            List<QuestionDTO> mediumQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 4, Difficulty.MEDIUM);
+            addQuestionsToSession(sessionId, mediumQuestions, category, Difficulty.MEDIUM);
+            allQuestionIds.addAll(mediumQuestions.stream().map(QuestionDTO::getQuestionId).toList());
 
             // Get hard questions (2)
-            List<QuestionDTO> hardQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, "HARD");
-            addQuestionsToSession(sessionId, hardQuestions, category);
-
-            // Add all questions to user's answered questions list
-            List<String> allQuestionIds = new ArrayList<>();
-            allQuestionIds.addAll(easyQuestions.stream().map(QuestionDTO::getQuestionId).toList());
-            allQuestionIds.addAll(mediumQuestions.stream().map(QuestionDTO::getQuestionId).toList());
+            List<QuestionDTO> hardQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, Difficulty.HARD);
+            addQuestionsToSession(sessionId, hardQuestions, category, Difficulty.HARD);
             allQuestionIds.addAll(hardQuestions.stream().map(QuestionDTO::getQuestionId).toList());
+
+            log.info("Collected question IDs for category {}: {}", category, allQuestionIds);
 
             // Add these questions to the user's answered questions list
             userService.addAnsweredQuestion(userId, allQuestionIds);
@@ -212,9 +232,14 @@ public class SessionServiceImp implements SessionService {
     }
 
 
-    private void addQuestionsToSession(String sessionId, List<QuestionDTO> questions, String categoryId) {
+
+    private void addQuestionsToSession(String sessionId, List<QuestionDTO> questions, String categoryId, Difficulty difficulty) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+
+        // Get or create the list for this category
+        List<SessionQuestions> categoryQuestions = session.getCategoryQuestionsMap()
+                .computeIfAbsent(categoryId, k -> new ArrayList<>());
 
         for (QuestionDTO question : questions) {
             SessionQuestions sessionQuestion = new SessionQuestions();
@@ -223,13 +248,25 @@ public class SessionServiceImp implements SessionService {
             sessionQuestion.setAnswered(false);
             sessionQuestion.setAnsweredByTeam(null);
             sessionQuestion.setAnsweredCorrectly(false);
-            sessionQuestion.setPointsAwarded(0);
+            sessionQuestion.setDifficulty(difficulty);
 
-            session.getGameQuestions().add(sessionQuestion);
+            // Set points based on difficulty
+            if (difficulty.equals(Difficulty.EASY)) {
+                sessionQuestion.setPointsAwarded(3);
+            } else if (difficulty.equals(Difficulty.MEDIUM)) {
+                sessionQuestion.setPointsAwarded(5);
+            } else if (difficulty.equals(Difficulty.HARD)) {
+                sessionQuestion.setPointsAwarded(10);
+            }
+
+            // Add the question only to the category-specific list
+            categoryQuestions.add(sessionQuestion);
         }
 
         sessionRepository.save(session);
     }
+
+
 
 
 
