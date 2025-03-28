@@ -5,6 +5,7 @@ import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.DTO.SessionDTO;
 import com.Misbra.Entity.Session;
 import com.Misbra.Enum.Difficulty;
+import com.Misbra.Enum.SessionStatus;
 import com.Misbra.Exception.Utils.ExceptionUtils;
 import com.Misbra.Mapper.SessionMapper;
 import com.Misbra.Repository.SessionRepository;
@@ -31,8 +32,8 @@ public class SessionServiceImp implements SessionService {
      * Constructs a new SessionServiceImp with the required dependencies.
      *
      * @param sessionRepository Repository for session entities.
-     * @param sessionMapper Mapper to convert between Session and SessionDTO.
-     * @param exceptionUtils Utility for handling exceptions.
+     * @param sessionMapper     Mapper to convert between Session and SessionDTO.
+     * @param exceptionUtils    Utility for handling exceptions.
      */
     public SessionServiceImp(SessionRepository sessionRepository, SessionMapper sessionMapper, ExceptionUtils exceptionUtils, QuestionService questionService, UserService userService) {
         this.sessionRepository = sessionRepository;
@@ -40,7 +41,7 @@ public class SessionServiceImp implements SessionService {
         this.exceptionUtils = exceptionUtils;
         this.questionService = questionService;
         this.userService = userService;
-  
+
     }
 
     @Override
@@ -134,34 +135,19 @@ public class SessionServiceImp implements SessionService {
     }
 
     @Override
-    public SessionDTO answerQuestion(String sessionId, String questionId, String teamId, boolean correct, int pointsAwarded) {
+    public SessionDTO answerQuestion(String sessionId, String questionId, String teamId) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found with ID: " + sessionId));
 
         // Find the question in any category
         SessionQuestions foundQuestion = null;
+        questionSearch:
         for (List<SessionQuestions> questions : session.getCategoryQuestionsMap().values()) {
             for (SessionQuestions question : questions) {
                 if (question.getQuestionId().equals(questionId)) {
-                    question.setAnswered(true);
-                    question.setAnsweredByTeam(teamId);
-                    question.setAnsweredCorrectly(correct);
-
-                    // Update team score if answered correctly
-                    if (correct) {
-                        if (teamId.equals(session.getTeam1name())) {
-                            session.setTeam1score(session.getTeam1score() + pointsAwarded);
-                        } else if (teamId.equals(session.getTeam2name())) {
-                            session.setTeam2score(session.getTeam2score() + pointsAwarded);
-                        }
-                    }
-
                     foundQuestion = question;
-                    break;
+                    break questionSearch; // Exit both loops when found
                 }
-            }
-            if (foundQuestion != null) {
-                break;
             }
         }
 
@@ -169,10 +155,35 @@ public class SessionServiceImp implements SessionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found in session");
         }
 
+        // Only process if the team is valid
+        if (teamId.equalsIgnoreCase(session.getTeam1name()) || teamId.equalsIgnoreCase(session.getTeam2name())) {
+            // Mark question as answered
+            foundQuestion.setAnswered(true);
+            foundQuestion.setAnsweredByTeam(teamId);
+
+            // Calculate points based on difficulty
+           int pointsAwarded = foundQuestion.getPointsAwarded();
+
+            // Update team score
+            if (teamId.equals(session.getTeam1name())) {
+                session.setTeam1score(session.getTeam1score() + pointsAwarded);
+            } else if (teamId.equals(session.getTeam2name())) {
+                session.setTeam2score(session.getTeam2score() + pointsAwarded);
+            }
+        }else {
+            foundQuestion.setAnswered(true);
+            foundQuestion.setAnsweredByTeam("NO ONE");
+
+        }
+        session.setAnsweredQuestions(session.getAnsweredQuestions() + 1);
+        if(session.getAnsweredQuestions() == session.getTotalQuestions()){
+            session.setSessionStatus(SessionStatus.COMPLETED);
+        }
+
+        // Save and return updated session
         Session updatedSession = sessionRepository.save(session);
         return sessionMapper.toDTO(updatedSession);
     }
-
 
     @Override
     public boolean deleteSession(String id) {
@@ -196,12 +207,14 @@ public class SessionServiceImp implements SessionService {
         sessionDTO.setTeam2score(0);
         sessionDTO.setGameCategories(categories);
         sessionDTO.setCategoryQuestionsMap(new HashMap<>());
+        sessionDTO.setAnsweredQuestions(0);
+        sessionDTO.setSessionStatus(SessionStatus.IN_PROGRESS);
 
         // Save the initial session to get an ID
         Session session = sessionMapper.toEntity(sessionDTO);
         Session savedSession = sessionRepository.save(session);
         String sessionId = savedSession.getSessionId();
-
+         int totalQuestions = 0;
         // For each category, get questions (2 easy, 4 medium, 2 hard)
         for (String category : categories) {
             List<String> allQuestionIds = new ArrayList<>();
@@ -222,11 +235,10 @@ public class SessionServiceImp implements SessionService {
             allQuestionIds.addAll(hardQuestions.stream().map(QuestionDTO::getQuestionId).toList());
 
             log.info("Collected question IDs for category {}: {}", category, allQuestionIds);
-
+            totalQuestions+=allQuestionIds.size();
             // Add these questions to the user's answered questions list
             userService.addAnsweredQuestion(userId, allQuestionIds);
         }
-
         // Get the complete session with all added questions
         return getSessionById(sessionId);
     }
@@ -242,29 +254,38 @@ public class SessionServiceImp implements SessionService {
                 .computeIfAbsent(categoryId, k -> new ArrayList<>());
 
         for (QuestionDTO question : questions) {
-            SessionQuestions sessionQuestion = new SessionQuestions();
-            sessionQuestion.setQuestionId(question.getQuestionId());
-            sessionQuestion.setCategoryId(categoryId);
-            sessionQuestion.setAnswered(false);
-            sessionQuestion.setAnsweredByTeam(null);
-            sessionQuestion.setAnsweredCorrectly(false);
-            sessionQuestion.setDifficulty(difficulty);
+            // Check if this question is already added to this category to prevent duplicates
+            boolean isDuplicate = categoryQuestions.stream()
+                    .anyMatch(sq -> sq.getQuestionId().equals(question.getQuestionId()) &&
+                            sq.getDifficulty().equals(difficulty));
 
-            // Set points based on difficulty
-            if (difficulty.equals(Difficulty.EASY)) {
-                sessionQuestion.setPointsAwarded(3);
-            } else if (difficulty.equals(Difficulty.MEDIUM)) {
-                sessionQuestion.setPointsAwarded(5);
-            } else if (difficulty.equals(Difficulty.HARD)) {
-                sessionQuestion.setPointsAwarded(10);
+            // Only add if not a duplicate
+            if (!isDuplicate) {
+                SessionQuestions sessionQuestion = new SessionQuestions();
+                sessionQuestion.setQuestionId(question.getQuestionId());
+                sessionQuestion.setCategoryId(categoryId);
+                sessionQuestion.setAnswered(false);
+                sessionQuestion.setAnsweredByTeam(null);
+                sessionQuestion.setDifficulty(difficulty);
+
+                // Set points based on difficulty
+                if (difficulty.equals(Difficulty.EASY)) {
+                    sessionQuestion.setPointsAwarded(3);
+                } else if (difficulty.equals(Difficulty.MEDIUM)) {
+                    sessionQuestion.setPointsAwarded(5);
+                } else if (difficulty.equals(Difficulty.HARD)) {
+                    sessionQuestion.setPointsAwarded(10);
+                }
+
+                // Add the question to the category-specific list
+                categoryQuestions.add(sessionQuestion);
+                session.setTotalQuestions(session.getTotalQuestions() + 1);
             }
-
-            // Add the question only to the category-specific list
-            categoryQuestions.add(sessionQuestion);
         }
 
         sessionRepository.save(session);
     }
+
 
 
 

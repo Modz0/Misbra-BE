@@ -26,6 +26,9 @@ public interface QuestionService {
 
     List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty);
 
+    int calculateAvailableGamesCount(String categoryId, String userId);
+
+    void clearQuestionRecord(String userId);
     String uploadQuestionPhotos(String questionId, MultipartFile file) throws IOException;
 
     String uploadAnswerPhotos(String questionId, MultipartFile file) throws IOException;

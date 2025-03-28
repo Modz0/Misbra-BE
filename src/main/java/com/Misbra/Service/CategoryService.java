@@ -12,6 +12,7 @@ import java.util.Optional;
 
 public interface CategoryService {
     Page<CategoryDTO> getAllCategories(Pageable pageable);
+    Page<CategoryDTO> getAllCategoriesForUser(Pageable pageable,String userId);
     CategoryDTO getCategoryById(String id);
     List<CategoryDTO> getListOfCategories (List<String> categoryIds);
     CategoryDTO createCategory(CategoryDTO categoryDTO ) ;

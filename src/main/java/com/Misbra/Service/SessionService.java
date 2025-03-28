@@ -72,11 +72,9 @@ public interface SessionService {
      * @param sessionId the ID of the session
      * @param questionId the ID of the question
      * @param teamId the ID of the team that answered
-     * @param correct whether the answer was correct
-     * @param pointsAwarded the points awarded for the answer
      * @return the updated SessionDTO
      */
-    SessionDTO answerQuestion(String sessionId, String questionId, String teamId, boolean correct, int pointsAwarded);
+    SessionDTO answerQuestion(String sessionId, String questionId, String teamId);
 
 
     /**

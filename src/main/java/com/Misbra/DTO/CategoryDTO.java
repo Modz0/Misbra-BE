@@ -13,4 +13,5 @@ public class CategoryDTO {
     private String categoryId;
     private String thumbnailPhotoId;
     private String ThumbnailUrl;
+    private int numberOfGamesLeft;
 }

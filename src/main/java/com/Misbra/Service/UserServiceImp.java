@@ -181,24 +181,28 @@ public class UserServiceImp implements UserService {
      */
     @Override
     public void addAnsweredQuestion(String userId, List<String> questionsId) {
-        if (userId == null || questionsId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "User ID and Question ID cannot be null");
-        }
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "User with ID " + userId + " not found"));
 
 
-        log.info("Adding answered questions: {}", questionsId);
-        log.info("Existing answered questions: {}", user.getPhone());
         // Use entity helper method for adding question
         questionsId.forEach(user::addAnsweredQuestion);
 
         // Save updated user
         userRepository.save(user);
     }
+
+    @Override
+    public void clearQuestionRecord (String userId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "User with ID " + userId + " not found"));
+
+        user.setAnsweredQuestionIds(null);
+        userRepository.save(user);
+    }
+
 
 
 }

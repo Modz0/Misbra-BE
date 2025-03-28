@@ -142,18 +142,15 @@ public class SessionController {
      * @param sessionId the ID of the session
      * @param questionId the ID of the question
      * @param teamId the ID of the answering team
-     * @param correct whether the answer was correct
-     * @param pointsAwarded the points awarded
+
      * @return ResponseEntity containing the updated session
      */
-    @PutMapping("/{sessionId}/questions/{questionId}/answer")
+    @PutMapping("/{sessionId}/question/{questionId}/answer")
     public ResponseEntity<SessionDTO> answerQuestion(
             @PathVariable String sessionId,
             @PathVariable String questionId,
-            @RequestParam String teamId,
-            @RequestParam boolean correct,
-            @RequestParam int pointsAwarded) {
-        return ResponseEntity.ok(sessionService.answerQuestion(sessionId, questionId, teamId, correct, pointsAwarded));
+            @RequestParam String teamId) {
+        return ResponseEntity.ok(sessionService.answerQuestion(sessionId, questionId, teamId ));
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.Misbra.DTO;
 
 import com.Misbra.Component.SessionQuestions;
+import com.Misbra.Enum.SessionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +25,9 @@ public class SessionDTO {
     private int team1score;
     private int team2score;
     private List<String> gameCategories;
-
+    private int totalQuestions;
+    private int answeredQuestions;
+    private SessionStatus sessionStatus;
     @Builder.Default
     private Map<String, List<SessionQuestions>> categoryQuestionsMap = new HashMap<>();
 

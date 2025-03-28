@@ -18,5 +18,5 @@ public interface UserService {
 
     List<String> getAnsweredQuestions(String userId);
     void addAnsweredQuestion(String userId, List<String> questionId);
-
+    void clearQuestionRecord (String userId);
 }

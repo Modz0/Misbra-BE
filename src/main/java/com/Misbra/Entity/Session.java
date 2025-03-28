@@ -1,6 +1,7 @@
 package com.Misbra.Entity;
 
 import com.Misbra.Component.SessionQuestions;
+import com.Misbra.Enum.SessionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,7 +27,9 @@ public class Session {
     private int team1score;
     private int team2score;
     private List<String> gameCategories;
-
+    private int totalQuestions;
+    private int answeredQuestions;
+    private SessionStatus sessionStatus;
     private Map<String, List<SessionQuestions>> categoryQuestionsMap = new HashMap<>();
 
 //    // Helper method to get all questions as a flat list

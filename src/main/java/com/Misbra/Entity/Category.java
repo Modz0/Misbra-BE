@@ -13,4 +13,6 @@ public class Category {
     private String description;
     private String categoryName;
     private String thumbnailPhotoId;
+    private int numberOfGamesLeft;
+
 }

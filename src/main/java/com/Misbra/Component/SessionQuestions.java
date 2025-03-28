@@ -9,7 +9,6 @@ public class SessionQuestions{
     private String categoryId;
     private boolean answered;
     private String answeredByTeam;
-    private boolean answeredCorrectly;
     private int pointsAwarded;
     private Difficulty difficulty;
 }

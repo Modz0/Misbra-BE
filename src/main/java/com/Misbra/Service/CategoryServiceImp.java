@@ -25,12 +25,14 @@ public class CategoryServiceImp implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
     private final PhotoService photoService;
+    private final QuestionService questionService;
 
     @Autowired
-    public CategoryServiceImp(CategoryRepository categoryRepository, CategoryMapper categoryMapper, PhotoService photoService) {
+    public CategoryServiceImp(CategoryRepository categoryRepository, CategoryMapper categoryMapper, PhotoService photoService, QuestionService questionService) {
         this.categoryRepository = categoryRepository;
         this.categoryMapper = categoryMapper;
         this.photoService = photoService;
+        this.questionService = questionService;
     }
 
     @Override
@@ -42,6 +44,42 @@ public class CategoryServiceImp implements CategoryService {
         List<CategoryDTO> categoryDTOs = categoryPage.getContent().stream()
                 .map(categoryMapper::toDTO)
                 .collect(Collectors.toList());
+
+        // Gather all thumbnail IDs from this page only
+        List<String> thumbnailIds = categoryDTOs.stream()
+                .map(CategoryDTO::getThumbnailPhotoId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Get presigned URLs for thumbnails in this page only
+        if (!thumbnailIds.isEmpty()) {
+            Map<String, String> presignedUrls = photoService.getBulkPresignedUrls(thumbnailIds);
+            for (CategoryDTO category : categoryDTOs) {
+                if (category.getThumbnailPhotoId() != null &&
+                        presignedUrls.containsKey(category.getThumbnailPhotoId())) {
+                    category.setThumbnailUrl(presignedUrls.get(category.getThumbnailPhotoId()));
+                }
+            }
+        }
+
+        // Return a new page with the same pagination metadata but with DTOs as content
+        return new PageImpl<>(categoryDTOs, pageable, categoryPage.getTotalElements());
+    }
+
+    @Override
+    public Page<CategoryDTO> getAllCategoriesForUser(Pageable pageable, String userId) {
+        // Get paginated data directly from repository
+        Page<Category> categoryPage = categoryRepository.findAll(pageable);
+
+
+        // Convert entities to DTOs while preserving pagination
+        List<CategoryDTO> categoryDTOs = categoryPage.getContent().stream()
+                .map(categoryMapper::toDTO)
+                .collect(Collectors.toList());
+
+        categoryDTOs.forEach(categoryDTO -> {categoryDTO.setNumberOfGamesLeft(questionService.calculateAvailableGamesCount(categoryDTO.getCategoryId(), userId));});
+
 
         // Gather all thumbnail IDs from this page only
         List<String> thumbnailIds = categoryDTOs.stream()

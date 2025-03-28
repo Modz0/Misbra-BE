@@ -102,10 +102,29 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     public QuestionDTO getQuestionById(String id) {
-        Optional<Question> question = questionRepository.findById(id);
-        return question.map(questionMapper::toDTO)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Question with ID " + id + " not found"));
+        Optional<Question> questionOptional = questionRepository.findById(id);
+
+        // Check if question exists and throw exception if not
+        if (questionOptional.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Question with ID " +id + " not found");        }
+
+        Question question = questionOptional.get();
+        String questionPhotoId = question.getQuestionPhotoId();
+        String answerPhotoId = question.getAnswerPhotoId();
+        QuestionDTO questionDTO = questionMapper.toDTO(question);
+
+        if (questionPhotoId != null) {
+            String questionPreSignedUrl = photoService.getPresignedUrl(questionPhotoId);
+            questionDTO.setQuestionThumbnailUrl(questionPreSignedUrl);
+        }
+
+        if (answerPhotoId != null) {
+            String answerPreSignedUrl = photoService.getPresignedUrl(answerPhotoId);
+            questionDTO.setAnswerThumbnailUrl(answerPreSignedUrl);
+        }
+
+        return questionDTO;
     }
 
     @Override
@@ -269,6 +288,42 @@ public class QuestionServiceImpl implements QuestionService {
         }
 
         return questionDTOs;
+    }
+    @Override
+    public int calculateAvailableGamesCount(String categoryId, String userId) {
+        List<String> answeredQuestionIds = userService.getAnsweredQuestions(userId);
+
+        // Create query to find questions not in the answered list
+        Query query = new Query();
+        if (!answeredQuestionIds.isEmpty()) {
+            query.addCriteria(Criteria.where("questionId").nin(answeredQuestionIds));
+        }
+
+        // Add category criteria
+        query.addCriteria(Criteria.where("category").is(categoryId));
+
+        // Add sorting by creation date
+        query.with(Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        List<Question> questions = mongoTemplate.find(query, Question.class);
+
+        // Count questions by difficulty
+        long easyQuestionCount = questions.stream().filter(x -> x.getDifficulty().equals(Difficulty.EASY)).count();
+        long mediumQuestionCount = questions.stream().filter(x -> x.getDifficulty().equals(Difficulty.MEDIUM)).count();
+        long hardQuestionCount = questions.stream().filter(x -> x.getDifficulty().equals(Difficulty.HARD)).count();
+
+        // Calculate possible games from each difficulty
+        long possibleGamesFromEasy = easyQuestionCount / 1;
+        long possibleGamesFromMedium = mediumQuestionCount / 1;
+        long possibleGamesFromHard = hardQuestionCount / 1;
+
+        // Return the minimum number of possible games (the limiting factor)
+        return (int) Math.min(possibleGamesFromEasy, Math.min(possibleGamesFromMedium, possibleGamesFromHard));
+    }
+
+    @Override
+    public void clearQuestionRecord(String userId){
+        userService.clearQuestionRecord(userId);
     }
 
 
