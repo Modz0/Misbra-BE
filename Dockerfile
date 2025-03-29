@@ -21,8 +21,8 @@ RUN chmod +x mvnw
 # Build the JAR (skip tests for faster build)
 RUN ./mvnw clean package -DskipTests
 
-# Stage 2: Run the JAR
-FROM eclipse-temurin:17-jre-alpine
+# Stage 2: Run the JAR (USE Java 21, NOT Java 17)
+FROM eclipse-temurin:21-jre-alpine  # <-- Change this to Java 21
 WORKDIR /app
 
 # Copy the built JAR from the builder stage
