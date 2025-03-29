@@ -2,6 +2,7 @@ package com.Misbra.Service;
 
 import com.Misbra.DTO.UserDTO;
 import com.Misbra.Entity.User;
+import com.Misbra.Enum.RoleEnum;
 import com.Misbra.Exception.Utils.ExceptionUtils;
 import com.Misbra.Exception.Validation.ValidationErrorDTO;
 import com.Misbra.Mapper.UserMapper;
@@ -201,6 +202,13 @@ public class UserServiceImp implements UserService {
 
         user.setAnsweredQuestionIds(null);
         userRepository.save(user);
+    }
+
+    @Override
+    public boolean isAdmin(String phone) {
+        Optional<User> user = userRepository.findByPhone(phone);
+        return user.map(u -> RoleEnum.ADMIN.equals(u.getRole()))
+                .orElse(false);
     }
 
 

@@ -1,10 +1,12 @@
 package com.Misbra.Service;
 
 import com.Misbra.Component.SessionQuestions;
+import com.Misbra.Component.TeamPowerup;
 import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.DTO.SessionDTO;
 import com.Misbra.Entity.Session;
 import com.Misbra.Enum.Difficulty;
+import com.Misbra.Enum.PowerupType;
 import com.Misbra.Enum.SessionStatus;
 import com.Misbra.Exception.Utils.ExceptionUtils;
 import com.Misbra.Mapper.SessionMapper;
@@ -133,16 +135,40 @@ public class SessionServiceImp implements SessionService {
         Session updatedSession = sessionRepository.save(session);
         return sessionMapper.toDTO(updatedSession);
     }
+    private Map<String, PowerupType> disableUsedPowerups(SessionDTO session) {
+        Map<String, PowerupType> usedPowerupsByTeam = new HashMap<>();
+
+        // Process team1 powerups
+        session.getTeam1Powerups().stream()
+                .filter(x -> x.isActive() && !x.isUsed())
+                .forEach(x -> {
+                    x.setUsed(true);
+                    usedPowerupsByTeam.put(session.getTeam1name(), x.getType());
+                });
+
+        // Process team2 powerups
+        session.getTeam2Powerups().stream()
+                .filter(x -> x.isActive() && !x.isUsed())
+                .forEach(x -> {
+                    x.setUsed(true);
+                    usedPowerupsByTeam.put(session.getTeam2name(), x.getType());
+                });
+
+        return usedPowerupsByTeam;
+    }
+
+
+
 
     @Override
-    public SessionDTO answerQuestion(String sessionId, String questionId, String teamId) {
-        Session session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found with ID: " + sessionId));
+    public SessionDTO answerQuestion(String sessionId, String questionId, String teamId,SessionDTO session) {
+        Map<String, PowerupType> usedPowerupsByTeam = disableUsedPowerups(session);
+        Session sessionEntity =sessionMapper.toEntity(session);
 
         // Find the question in any category
         SessionQuestions foundQuestion = null;
         questionSearch:
-        for (List<SessionQuestions> questions : session.getCategoryQuestionsMap().values()) {
+        for (List<SessionQuestions> questions : sessionEntity.getCategoryQuestionsMap().values()) {
             for (SessionQuestions question : questions) {
                 if (question.getQuestionId().equals(questionId)) {
                     foundQuestion = question;
@@ -154,34 +180,58 @@ public class SessionServiceImp implements SessionService {
         if (foundQuestion == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found in session");
         }
-
-        // Only process if the team is valid
-        if (teamId.equalsIgnoreCase(session.getTeam1name()) || teamId.equalsIgnoreCase(session.getTeam2name())) {
+// Only process if the team is valid
+        if (teamId.equalsIgnoreCase(sessionEntity.getTeam1name()) || teamId.equalsIgnoreCase(sessionEntity.getTeam2name())) {
             // Mark question as answered
             foundQuestion.setAnswered(true);
             foundQuestion.setAnsweredByTeam(teamId);
+            int pointsAwarded = foundQuestion.getPointsAwarded();
+            String opposingTeamId = teamId.equalsIgnoreCase(sessionEntity.getTeam1name()) ?
+                    sessionEntity.getTeam2name() : sessionEntity.getTeam1name();
 
-            // Calculate points based on difficulty
-           int pointsAwarded = foundQuestion.getPointsAwarded();
+            // Check if answering team used DOUBLE_OR_MINUS powerup
+            if (usedPowerupsByTeam.containsKey(teamId) &&
+                    usedPowerupsByTeam.get(teamId).equals(PowerupType.DOUBLE_OR_MINUS)) {
+                pointsAwarded = pointsAwarded * 2;
+            }
+
+            // Check if opposing team used MINUS_FIFTY_PERCENT powerup
+            if (usedPowerupsByTeam.containsKey(opposingTeamId) &&
+                    usedPowerupsByTeam.get(opposingTeamId).equals(PowerupType.MINUS_FIFTY_PERCENT)) {
+                pointsAwarded = pointsAwarded / 2;
+            }
 
             // Update team score
-            if (teamId.equals(session.getTeam1name())) {
-                session.setTeam1score(session.getTeam1score() + pointsAwarded);
-            } else if (teamId.equals(session.getTeam2name())) {
-                session.setTeam2score(session.getTeam2score() + pointsAwarded);
+            if (teamId.equalsIgnoreCase(sessionEntity.getTeam1name())) {
+                sessionEntity.setTeam1score(sessionEntity.getTeam1score() + pointsAwarded);
+            } else {
+                sessionEntity.setTeam2score(sessionEntity.getTeam2score() + pointsAwarded);
             }
-        }else {
+        } else {
+            // No valid team answered
             foundQuestion.setAnswered(true);
             foundQuestion.setAnsweredByTeam("NO ONE");
 
+            // Check if Team 1 used DOUBLE_OR_MINUS (which becomes minus when no one answers)
+            if (usedPowerupsByTeam.containsKey(sessionEntity.getTeam1name()) &&
+                    usedPowerupsByTeam.get(sessionEntity.getTeam1name()).equals(PowerupType.DOUBLE_OR_MINUS)) {
+                sessionEntity.setTeam1score(sessionEntity.getTeam1score() - foundQuestion.getPointsAwarded());
+            }
+
+            // Check if Team 2 used DOUBLE_OR_MINUS (which becomes minus when no one answers)
+            if (usedPowerupsByTeam.containsKey(sessionEntity.getTeam2name()) &&
+                    usedPowerupsByTeam.get(sessionEntity.getTeam2name()).equals(PowerupType.DOUBLE_OR_MINUS)) {
+                sessionEntity.setTeam2score(sessionEntity.getTeam2score() - foundQuestion.getPointsAwarded());
+            }
         }
-        session.setAnsweredQuestions(session.getAnsweredQuestions() + 1);
-        if(session.getAnsweredQuestions() == session.getTotalQuestions()){
-            session.setSessionStatus(SessionStatus.COMPLETED);
+
+        sessionEntity.setAnsweredQuestions(sessionEntity.getAnsweredQuestions() + 1);
+        if(sessionEntity.getAnsweredQuestions() == sessionEntity.getTotalQuestions()){
+            sessionEntity.setSessionStatus(SessionStatus.COMPLETED);
         }
 
         // Save and return updated session
-        Session updatedSession = sessionRepository.save(session);
+        Session updatedSession = sessionRepository.save(sessionEntity);
         return sessionMapper.toDTO(updatedSession);
     }
 
@@ -212,6 +262,7 @@ public class SessionServiceImp implements SessionService {
 
         // Save the initial session to get an ID
         Session session = sessionMapper.toEntity(sessionDTO);
+        session.initializePowerups();
         Session savedSession = sessionRepository.save(session);
         String sessionId = savedSession.getSessionId();
          int totalQuestions = 0;
@@ -270,11 +321,11 @@ public class SessionServiceImp implements SessionService {
 
                 // Set points based on difficulty
                 if (difficulty.equals(Difficulty.EASY)) {
-                    sessionQuestion.setPointsAwarded(3);
+                    sessionQuestion.setPointsAwarded(2);
                 } else if (difficulty.equals(Difficulty.MEDIUM)) {
-                    sessionQuestion.setPointsAwarded(5);
+                    sessionQuestion.setPointsAwarded(4);
                 } else if (difficulty.equals(Difficulty.HARD)) {
-                    sessionQuestion.setPointsAwarded(10);
+                    sessionQuestion.setPointsAwarded(8);
                 }
 
                 // Add the question to the category-specific list

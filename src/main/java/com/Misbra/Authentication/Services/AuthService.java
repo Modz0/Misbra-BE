@@ -6,6 +6,7 @@ import com.Misbra.Authentication.DTO.AuthRequest.RegisterRequestDTO;
 import com.Misbra.Authentication.DTO.AuthResponse.AuthResponseDTO;
 import com.Misbra.DTO.UserDTO;
 import com.Misbra.Entity.User;
+import com.Misbra.Enum.RecordStatus;
 import com.Misbra.Enum.RoleEnum;
 import com.Misbra.Exception.Utils.ExceptionUtils;
 import com.Misbra.Exception.Validation.ValidationErrorDTO;
@@ -64,6 +65,7 @@ public class AuthService {
                 .email(request.getEmail()) // Store email for reference
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(RoleEnum.USER)
+                .recordStatus(RecordStatus.ACTIVE)
                 .enabled(true)
                 .build();
 
@@ -158,4 +160,6 @@ public class AuthService {
     public String generateNonExpiringToken (){
         return jwtService.generateNonExpiringToken();
     }
+
+
 }

@@ -1,8 +1,11 @@
 package com.Misbra.Entity;
 
 import com.Misbra.Component.SessionQuestions;
+import com.Misbra.Component.TeamPowerup;
+import com.Misbra.Enum.PowerupType;
 import com.Misbra.Enum.SessionStatus;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -18,6 +21,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "sessions")
+@Builder
 public class Session {
     @Id
     private String sessionId;
@@ -30,7 +34,14 @@ public class Session {
     private int totalQuestions;
     private int answeredQuestions;
     private SessionStatus sessionStatus;
+    private Map<String, Integer> powerups;
     private Map<String, List<SessionQuestions>> categoryQuestionsMap = new HashMap<>();
+
+    @Builder.Default
+    private List<TeamPowerup> team1Powerups = new ArrayList<>();
+    @Builder.Default
+    private List<TeamPowerup> team2Powerups = new ArrayList<>();
+
 
 //    // Helper method to get all questions as a flat list
 //    public List<SessionQuestions> getGameQuestions() {
@@ -45,4 +56,17 @@ public class Session {
         this.categoryQuestionsMap = gameQuestions.stream()
                 .collect(Collectors.groupingBy(SessionQuestions::getCategoryId));
     }
+
+    // Initialize powerups
+    public void initializePowerups() {
+        team1Powerups.clear();
+        team2Powerups.clear();
+
+        // Add one of each powerup type to each team
+        for (PowerupType type : PowerupType.values()) {
+            team1Powerups.add(new TeamPowerup(type, false, false));
+            team2Powerups.add(new TeamPowerup(type, false, false));
+        }
+    }
+
 }

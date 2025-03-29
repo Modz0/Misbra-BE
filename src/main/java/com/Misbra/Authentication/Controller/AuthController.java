@@ -6,10 +6,12 @@ import com.Misbra.Authentication.DTO.AuthRequest.PhoneRequestDTO;
 import com.Misbra.Authentication.DTO.AuthRequest.RegisterRequestDTO;
 import com.Misbra.Authentication.DTO.AuthResponse.AuthResponseDTO;
 import com.Misbra.Authentication.Services.AuthService;
+import com.Misbra.Entity.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

@@ -1,9 +1,11 @@
 package com.Misbra.Controller;
 
 import com.Misbra.Component.SessionQuestions;
+import com.Misbra.Component.TeamPowerup;
 import com.Misbra.DTO.SessionDTO;
 import com.Misbra.Entity.User;
 import com.Misbra.Service.SessionService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/sessions")
+@Slf4j
 public class SessionController {
 
     private final SessionService sessionService;
@@ -100,9 +103,9 @@ public class SessionController {
      * @param sessionDTO the updated session details
      * @return ResponseEntity containing the updated session
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/update")
     public ResponseEntity<SessionDTO> updateSession(@PathVariable String id, @RequestBody SessionDTO sessionDTO) {
-        sessionDTO.setSessionId(id);
+        log.info(sessionDTO.toString());
         return ResponseEntity.ok(sessionService.updateSession(sessionDTO));
     }
 
@@ -149,8 +152,10 @@ public class SessionController {
     public ResponseEntity<SessionDTO> answerQuestion(
             @PathVariable String sessionId,
             @PathVariable String questionId,
+            @RequestBody SessionDTO session,
+
             @RequestParam String teamId) {
-        return ResponseEntity.ok(sessionService.answerQuestion(sessionId, questionId, teamId ));
+        return ResponseEntity.ok(sessionService.answerQuestion(sessionId, questionId, teamId,session ));
     }
 
     /**

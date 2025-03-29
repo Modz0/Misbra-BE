@@ -1,6 +1,7 @@
 package com.Misbra.Service;
 
 import com.Misbra.Component.SessionQuestions;
+import com.Misbra.Component.TeamPowerup;
 import com.Misbra.DTO.SessionDTO;
 import com.Misbra.Entity.Session;
 
@@ -74,7 +75,8 @@ public interface SessionService {
      * @param teamId the ID of the team that answered
      * @return the updated SessionDTO
      */
-    SessionDTO answerQuestion(String sessionId, String questionId, String teamId);
+
+    SessionDTO answerQuestion(String sessionId, String questionId, String teamId ,SessionDTO session);
 
 
     /**
