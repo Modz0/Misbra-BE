@@ -1,5 +1,5 @@
 # Stage 1: Build the JAR
-FROM eclipse-temurin:21-jdk-alpine as builder
+FROM amazoncorretto:21 as builder
 
 WORKDIR /app
 
