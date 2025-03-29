@@ -33,7 +33,7 @@ RUN mkdir -p /app/config
 COPY src/main/resources/application.properties /app/config/application.properties
 
 # Expose port 8080 for Spring Boot
-EXPOSE 8080
+EXPOSE 8443
 
 # Set environment variable for Spring Boot configuration
 ENV SPRING_CONFIG_LOCATION=file:/app/config/application.properties
