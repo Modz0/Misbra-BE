@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface QuestionService {
-    List<QuestionDTO> getAllQuestions();
+    Page<QuestionDTO> getAllQuestions(  Pageable pageable);
 
     QuestionDTO getQuestionById(String id);
 

@@ -11,6 +11,7 @@ import com.Misbra.Mapper.QuestionMapper;
 import com.Misbra.Repository.QuestionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -46,10 +47,11 @@ public class QuestionServiceImpl implements QuestionService {
         this.mongoTemplate = mongoTemplate;
         this.photoService = photoService;
     }
-
     @Override
-    public List<QuestionDTO> getAllQuestions() {
-        List<Question> questions = questionRepository.findAll();
+    public Page<QuestionDTO> getAllQuestions(Pageable pageable) {
+        Page<Question> questionPage = questionRepository.findAll(pageable);
+
+        List<Question> questions = questionPage.getContent();
 
         // Gather all photo IDs (both question and answer)
         List<String> questionPhotoIds = questions.stream()
@@ -96,8 +98,10 @@ public class QuestionServiceImpl implements QuestionService {
             }
         }
 
-        return questionDTOs;
+        return new PageImpl<>(questionDTOs, pageable, questionPage.getTotalElements());
     }
+
+
 
 
     @Override
