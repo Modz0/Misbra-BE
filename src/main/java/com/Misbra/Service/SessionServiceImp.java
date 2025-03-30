@@ -158,7 +158,6 @@ public class SessionServiceImp implements SessionService {
     }
 
 
-
     @Override
     public SessionDTO answerQuestion(String sessionId, String questionId, String teamId, SessionDTO session) {
         Map<String, PowerupType> usedPowerupsByTeam = disableUsedPowerups(session);
@@ -192,39 +191,60 @@ public class SessionServiceImp implements SessionService {
             String canonicalTeamName = isTeam1 ? team1 : team2;
             foundQuestion.setAnsweredByTeam(canonicalTeamName);
 
-            int pointsAwarded = foundQuestion.getPointsAwarded();
+            int basePoints = foundQuestion.getPointsAwarded();
+            int pointsAwarded = basePoints;
             String opposingTeam = isTeam1 ? team2 : team1;
 
-            // Check if answering team used DOUBLE_OR_MINUS
-            if (usedPowerupsByTeam.containsKey(canonicalTeamName) &&
-                    usedPowerupsByTeam.get(canonicalTeamName) == PowerupType.DOUBLE_OR_MINUS) {
-                pointsAwarded *= 2;
+            // Handle answering team's powerups
+            if (usedPowerupsByTeam.containsKey(canonicalTeamName)) {
+                if (usedPowerupsByTeam.get(canonicalTeamName) == PowerupType.DOUBLE_OR_MINUS) {
+                    pointsAwarded *= 2;
+                }
             }
 
-            // Check if opposing team used MINUS_FIFTY_PERCENT
-            if (usedPowerupsByTeam.containsKey(opposingTeam) &&
-                    usedPowerupsByTeam.get(opposingTeam) == PowerupType.MINUS_FIFTY_PERCENT) {
-                pointsAwarded /= 2;
+            // Handle opposing team's powerups
+            if (usedPowerupsByTeam.containsKey(opposingTeam)) {
+                PowerupType opposingPowerup = usedPowerupsByTeam.get(opposingTeam);
+                if (opposingPowerup == PowerupType.MINUS_FIFTY_PERCENT) {
+                    pointsAwarded = (int) Math.round(pointsAwarded * 0.5);
+                }
             }
 
-            // Update team score
+            // Update answering team's score
             if (isTeam1) {
                 sessionEntity.setTeam1score(sessionEntity.getTeam1score() + pointsAwarded);
             } else {
                 sessionEntity.setTeam2score(sessionEntity.getTeam2score() + pointsAwarded);
+            }
+
+            // Handle opposing team's DOUBLE_OR_MINUS penalty
+            if (usedPowerupsByTeam.containsKey(opposingTeam) &&
+                    usedPowerupsByTeam.get(opposingTeam) == PowerupType.DOUBLE_OR_MINUS) {
+
+                // Remove base points from opposing team
+                if (opposingTeam.equals(team1)) {
+                    sessionEntity.setTeam1score(sessionEntity.getTeam1score() - basePoints);
+                } else {
+                    sessionEntity.setTeam2score(sessionEntity.getTeam2score() - basePoints);
+                }
+
+                // Add base points to answering team
+                if (isTeam1) {
+                    sessionEntity.setTeam1score(sessionEntity.getTeam1score() + basePoints);
+                } else {
+                    sessionEntity.setTeam2score(sessionEntity.getTeam2score() + basePoints);
+                }
             }
         } else {
             // No valid team answered
             foundQuestion.setAnswered(true);
             foundQuestion.setAnsweredByTeam("NO ONE");
 
-            // Check if Team 1 used DOUBLE_OR_MINUS (penalty)
+            // Apply DOUBLE_OR_MINUS penalties for both teams
             if (usedPowerupsByTeam.containsKey(team1) &&
                     usedPowerupsByTeam.get(team1) == PowerupType.DOUBLE_OR_MINUS) {
                 sessionEntity.setTeam1score(sessionEntity.getTeam1score() - foundQuestion.getPointsAwarded());
             }
-
-            // Check if Team 2 used DOUBLE_OR_MINUS (penalty)
             if (usedPowerupsByTeam.containsKey(team2) &&
                     usedPowerupsByTeam.get(team2) == PowerupType.DOUBLE_OR_MINUS) {
                 sessionEntity.setTeam2score(sessionEntity.getTeam2score() - foundQuestion.getPointsAwarded());
