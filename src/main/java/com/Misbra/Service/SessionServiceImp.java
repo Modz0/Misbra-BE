@@ -157,7 +157,6 @@ public class SessionServiceImp implements SessionService {
         return usedPowerupsByTeam;
     }
 
-
     @Override
     public SessionDTO answerQuestion(String sessionId, String questionId, String teamId, SessionDTO session) {
         Map<String, PowerupType> usedPowerupsByTeam = disableUsedPowerups(session);
@@ -217,23 +216,16 @@ public class SessionServiceImp implements SessionService {
                 sessionEntity.setTeam2score(sessionEntity.getTeam2score() + pointsAwarded);
             }
 
-            // Handle opposing team's DOUBLE_OR_MINUS penalty
+            // Handle opposing team's DOUBLE_OR_MINUS penalty (only penalize, no bonus)
             if (usedPowerupsByTeam.containsKey(opposingTeam) &&
                     usedPowerupsByTeam.get(opposingTeam) == PowerupType.DOUBLE_OR_MINUS) {
-
                 // Remove base points from opposing team
                 if (opposingTeam.equals(team1)) {
                     sessionEntity.setTeam1score(sessionEntity.getTeam1score() - basePoints);
                 } else {
                     sessionEntity.setTeam2score(sessionEntity.getTeam2score() - basePoints);
                 }
-
-                // Add base points to answering team
-                if (isTeam1) {
-                    sessionEntity.setTeam1score(sessionEntity.getTeam1score() + basePoints);
-                } else {
-                    sessionEntity.setTeam2score(sessionEntity.getTeam2score() + basePoints);
-                }
+                // No bonus points added to the answering team
             }
         } else {
             // No valid team answered
