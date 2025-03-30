@@ -48,22 +48,10 @@ public class SessionController {
     /**
      * Retrieves sessions by user ID.
      *
-     * @param userId the ID of the user
      * @return ResponseEntity containing a list of the user's sessions
      */
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<SessionDTO>> getSessionsByUserId(@PathVariable String userId) {
-        return ResponseEntity.ok(sessionService.getSessionsByUserId(userId));
-    }
-
-    /**
-     * Retrieves sessions for the authenticated user.
-     *
-     * @param currentUser the authenticated user
-     * @return ResponseEntity containing a list of the user's sessions
-     */
-    @GetMapping("/my-sessions")
-    public ResponseEntity<List<SessionDTO>> getMySessions(@AuthenticationPrincipal User currentUser) {
+    @GetMapping("/user")
+    public ResponseEntity<List<SessionDTO>> getSessionsByUserId(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(sessionService.getSessionsByUserId(currentUser.getUserId()));
     }
 

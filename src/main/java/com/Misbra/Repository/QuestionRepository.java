@@ -12,7 +12,8 @@ import java.util.List;
 @Repository
 public interface QuestionRepository extends MongoRepository<Question, String> {
     Page<Question> findByCategory(String category , Pageable pageable);
-    List<Question> findByDifficulty(Difficulty difficulty);
-    List<Question> findByCategoryAndDifficulty(String category, Difficulty difficulty);
+    Page<Question> findByDifficultyIn(Pageable pageable,List<Difficulty> difficulty);
+    Page<Question> findByCategoryIn(Pageable pageable,List<String> categories);
+    Page<Question> findByCategoryInAndDifficultyIn(Pageable pageable,List<String> categories, List<Difficulty> difficulty);
     List<Question> findByIsAnswered(boolean isAnswered);
 }

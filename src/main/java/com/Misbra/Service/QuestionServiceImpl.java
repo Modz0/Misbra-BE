@@ -19,6 +19,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -48,8 +50,19 @@ public class QuestionServiceImpl implements QuestionService {
         this.photoService = photoService;
     }
     @Override
-    public Page<QuestionDTO> getAllQuestions(Pageable pageable) {
-        Page<Question> questionPage = questionRepository.findAll(pageable);
+    public Page<QuestionDTO> getAllQuestions(Pageable pageable , List<String> selectedCategory,
+                                              List<Difficulty> selectedDifficulty) {
+        Page<Question> questionPage;
+
+        if (ObjectUtils.isEmpty(selectedCategory) && ObjectUtils.isEmpty(selectedDifficulty)) {
+            questionPage = questionRepository.findAll(pageable);
+        } else if (ObjectUtils.isEmpty(selectedCategory)) {
+            questionPage = questionRepository.findByDifficultyIn(pageable, selectedDifficulty);
+        } else if (ObjectUtils.isEmpty(selectedDifficulty)) {
+            questionPage = questionRepository.findByCategoryIn(pageable, selectedCategory);
+        } else {
+            questionPage = questionRepository.findByCategoryInAndDifficultyIn(pageable, selectedCategory, selectedDifficulty);
+        }
 
         List<Question> questions = questionPage.getContent();
 

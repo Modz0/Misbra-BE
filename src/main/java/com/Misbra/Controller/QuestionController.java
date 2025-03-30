@@ -33,10 +33,13 @@ public class QuestionController {
     @GetMapping
     public ResponseEntity<Page<QuestionDTO>> getAllQuestions(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "9") int size
+            @RequestParam(defaultValue = "9") int size,
+            @RequestParam(required = false) List<String> selectedCategory,
+            @RequestParam(required = false) List<Difficulty> selectedDifficulty
+
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(questionService.getAllQuestions(pageable));
+        return ResponseEntity.ok(questionService.getAllQuestions(pageable,selectedCategory,selectedDifficulty));
     }
 
     @GetMapping("/{id}")

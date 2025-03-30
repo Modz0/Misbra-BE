@@ -4,6 +4,7 @@ import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.Enum.Difficulty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface QuestionService {
-    Page<QuestionDTO> getAllQuestions(  Pageable pageable);
+    Page<QuestionDTO> getAllQuestions(  Pageable pageable ,List<String> selectedCategory, List<Difficulty> selectedDifficulty);
 
     QuestionDTO getQuestionById(String id);
 
