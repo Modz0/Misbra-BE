@@ -159,11 +159,10 @@ public class SessionServiceImp implements SessionService {
 
 
 
-
     @Override
-    public SessionDTO answerQuestion(String sessionId, String questionId, String teamId,SessionDTO session) {
+    public SessionDTO answerQuestion(String sessionId, String questionId, String teamId, SessionDTO session) {
         Map<String, PowerupType> usedPowerupsByTeam = disableUsedPowerups(session);
-        Session sessionEntity =sessionMapper.toEntity(session);
+        Session sessionEntity = sessionMapper.toEntity(session);
 
         // Find the question in any category
         SessionQuestions foundQuestion = null;
@@ -180,29 +179,36 @@ public class SessionServiceImp implements SessionService {
         if (foundQuestion == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found in session");
         }
-// Only process if the team is valid
-        if (teamId.equalsIgnoreCase(sessionEntity.getTeam1name()) || teamId.equalsIgnoreCase(sessionEntity.getTeam2name())) {
-            // Mark question as answered
-            foundQuestion.setAnswered(true);
-            foundQuestion.setAnsweredByTeam(teamId);
-            int pointsAwarded = foundQuestion.getPointsAwarded();
-            String opposingTeamId = teamId.equalsIgnoreCase(sessionEntity.getTeam1name()) ?
-                    sessionEntity.getTeam2name() : sessionEntity.getTeam1name();
 
-            // Check if answering team used DOUBLE_OR_MINUS powerup
-            if (usedPowerupsByTeam.containsKey(teamId) &&
-                    usedPowerupsByTeam.get(teamId).equals(PowerupType.DOUBLE_OR_MINUS)) {
-                pointsAwarded = pointsAwarded * 2;
+        // Determine canonical team names
+        String team1 = sessionEntity.getTeam1name();
+        String team2 = sessionEntity.getTeam2name();
+        boolean isTeam1 = teamId.equalsIgnoreCase(team1);
+        boolean isTeam2 = teamId.equalsIgnoreCase(team2);
+
+        // Process valid team answer
+        if (isTeam1 || isTeam2) {
+            foundQuestion.setAnswered(true);
+            String canonicalTeamName = isTeam1 ? team1 : team2;
+            foundQuestion.setAnsweredByTeam(canonicalTeamName);
+
+            int pointsAwarded = foundQuestion.getPointsAwarded();
+            String opposingTeam = isTeam1 ? team2 : team1;
+
+            // Check if answering team used DOUBLE_OR_MINUS
+            if (usedPowerupsByTeam.containsKey(canonicalTeamName) &&
+                    usedPowerupsByTeam.get(canonicalTeamName) == PowerupType.DOUBLE_OR_MINUS) {
+                pointsAwarded *= 2;
             }
 
-            // Check if opposing team used MINUS_FIFTY_PERCENT powerup
-            if (usedPowerupsByTeam.containsKey(opposingTeamId) &&
-                    usedPowerupsByTeam.get(opposingTeamId).equals(PowerupType.MINUS_FIFTY_PERCENT)) {
-                pointsAwarded = pointsAwarded / 2;
+            // Check if opposing team used MINUS_FIFTY_PERCENT
+            if (usedPowerupsByTeam.containsKey(opposingTeam) &&
+                    usedPowerupsByTeam.get(opposingTeam) == PowerupType.MINUS_FIFTY_PERCENT) {
+                pointsAwarded /= 2;
             }
 
             // Update team score
-            if (teamId.equalsIgnoreCase(sessionEntity.getTeam1name())) {
+            if (isTeam1) {
                 sessionEntity.setTeam1score(sessionEntity.getTeam1score() + pointsAwarded);
             } else {
                 sessionEntity.setTeam2score(sessionEntity.getTeam2score() + pointsAwarded);
@@ -212,21 +218,21 @@ public class SessionServiceImp implements SessionService {
             foundQuestion.setAnswered(true);
             foundQuestion.setAnsweredByTeam("NO ONE");
 
-            // Check if Team 1 used DOUBLE_OR_MINUS (which becomes minus when no one answers)
-            if (usedPowerupsByTeam.containsKey(sessionEntity.getTeam1name()) &&
-                    usedPowerupsByTeam.get(sessionEntity.getTeam1name()).equals(PowerupType.DOUBLE_OR_MINUS)) {
+            // Check if Team 1 used DOUBLE_OR_MINUS (penalty)
+            if (usedPowerupsByTeam.containsKey(team1) &&
+                    usedPowerupsByTeam.get(team1) == PowerupType.DOUBLE_OR_MINUS) {
                 sessionEntity.setTeam1score(sessionEntity.getTeam1score() - foundQuestion.getPointsAwarded());
             }
 
-            // Check if Team 2 used DOUBLE_OR_MINUS (which becomes minus when no one answers)
-            if (usedPowerupsByTeam.containsKey(sessionEntity.getTeam2name()) &&
-                    usedPowerupsByTeam.get(sessionEntity.getTeam2name()).equals(PowerupType.DOUBLE_OR_MINUS)) {
+            // Check if Team 2 used DOUBLE_OR_MINUS (penalty)
+            if (usedPowerupsByTeam.containsKey(team2) &&
+                    usedPowerupsByTeam.get(team2) == PowerupType.DOUBLE_OR_MINUS) {
                 sessionEntity.setTeam2score(sessionEntity.getTeam2score() - foundQuestion.getPointsAwarded());
             }
         }
 
         sessionEntity.setAnsweredQuestions(sessionEntity.getAnsweredQuestions() + 1);
-        if(sessionEntity.getAnsweredQuestions() == sessionEntity.getTotalQuestions()){
+        if (sessionEntity.getAnsweredQuestions() == sessionEntity.getTotalQuestions()) {
             sessionEntity.setSessionStatus(SessionStatus.COMPLETED);
         }
 
