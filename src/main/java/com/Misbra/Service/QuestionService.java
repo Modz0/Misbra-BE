@@ -37,5 +37,6 @@ public interface QuestionService {
     void setQuestionThumbnail(String questionId, String photoId);
     void setAnswerThumbnail(String questionId, String photoId);
 
+    List<QuestionDTO> findQuestionByCategory (String category);
 
 }

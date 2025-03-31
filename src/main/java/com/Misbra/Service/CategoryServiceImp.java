@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class CategoryServiceImp implements CategoryService {
 
     private final CategoryRepository categoryRepository;
@@ -152,10 +154,18 @@ public class CategoryServiceImp implements CategoryService {
         Category updatedCategory = categoryRepository.save(existingCategory);
         return categoryMapper.toDTO(updatedCategory);  // Use mapper
     }
+
+    @Transactional
     @Override
     public void deleteCategory(String id) {
         Category category = categoryRepository.findById(id)
+
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+
+        questionService.findQuestionByCategory(id).forEach(question -> {
+            questionService.deleteQuestion(question.getQuestionId());
+        });
+
 
         categoryRepository.delete(category);
     }

@@ -375,6 +375,12 @@ public class QuestionServiceImpl implements QuestionService {
         questionRepository.save(question);
 
     }
+     @Override
+     public List<QuestionDTO> findQuestionByCategory (String category) {
+        List<Question> questions = questionRepository.findQuestionByCategory(category);
+
+        return questions.stream().map(questionMapper::toDTO).collect(Collectors.toList());
+     }
 
 
 }
