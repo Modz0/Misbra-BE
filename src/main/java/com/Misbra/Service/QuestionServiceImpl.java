@@ -330,9 +330,9 @@ public class QuestionServiceImpl implements QuestionService {
         long hardQuestionCount = questions.stream().filter(x -> x.getDifficulty().equals(Difficulty.HARD)).count();
 
         // Calculate possible games from each difficulty
-        long possibleGamesFromEasy = easyQuestionCount / 1;
-        long possibleGamesFromMedium = mediumQuestionCount / 1;
-        long possibleGamesFromHard = hardQuestionCount / 1;
+        long possibleGamesFromEasy = easyQuestionCount / 2;
+        long possibleGamesFromMedium = mediumQuestionCount / 4;
+        long possibleGamesFromHard = hardQuestionCount / 2;
 
         // Return the minimum number of possible games (the limiting factor)
         return (int) Math.min(possibleGamesFromEasy, Math.min(possibleGamesFromMedium, possibleGamesFromHard));
