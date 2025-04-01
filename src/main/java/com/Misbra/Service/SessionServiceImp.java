@@ -339,11 +339,11 @@ public class SessionServiceImp implements SessionService {
 
                 // Set points based on difficulty
                 if (difficulty.equals(Difficulty.EASY)) {
-                    sessionQuestion.setPointsAwarded(2);
+                    sessionQuestion.setPointsAwarded(250);
                 } else if (difficulty.equals(Difficulty.MEDIUM)) {
-                    sessionQuestion.setPointsAwarded(4);
+                    sessionQuestion.setPointsAwarded(500);
                 } else if (difficulty.equals(Difficulty.HARD)) {
-                    sessionQuestion.setPointsAwarded(8);
+                    sessionQuestion.setPointsAwarded(1000);
                 }
 
                 // Add the question to the category-specific list
