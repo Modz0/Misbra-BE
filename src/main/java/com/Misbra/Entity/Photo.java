@@ -4,6 +4,7 @@ import com.Misbra.Enum.referenceType;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import software.amazon.awssdk.annotations.NotNull;
 
 import java.time.LocalDateTime;
 
@@ -17,6 +18,7 @@ public class Photo {
     private String s3key;
     private String uploadedByUserId;
     private LocalDateTime uploadedDate;
+    @NotNull
     private String referenceId;
     private referenceType type;// place / menu item
     private Boolean isVerified;
