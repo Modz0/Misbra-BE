@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -120,13 +121,23 @@ public class AuthService {
                 .build();
     }
     public AuthResponseDTO passwordLogin(PhoneLoginRequestDTO request) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getPhone(),
+                            request.getPassword()
+                    )
+            );
+        } catch (AuthenticationException e) {
+            List<ValidationErrorDTO> errors = List.of(
+                    new ValidationErrorDTO(
+                            AuthMessageKeys.INVALID_CREDENTIALS,
+                            new String[]{request.getPhone()}
+                    )
+            );
+            exceptionUtils.throwValidationException(errors);
+        }
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getPhone(),
-                        request.getPassword()
-                )
-        );
         // Find or create user
         Optional<User> user = userService.findByPhone(request.getPhone());
 
