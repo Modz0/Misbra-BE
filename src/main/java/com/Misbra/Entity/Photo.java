@@ -2,10 +2,13 @@ package com.Misbra.Entity;
 
 import com.Misbra.Enum.referenceType;
 import lombok.Data;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import software.amazon.awssdk.annotations.NotNull;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Data
@@ -25,5 +28,11 @@ public class Photo {
     private String reviewId;
     private String presignedUrl;
     private LocalDateTime presignedUrlExpiration;
+
+    @CreatedDate
+    private Instant createdAt;
+
+    @LastModifiedDate
+    private Instant updatedAt;
 
 }

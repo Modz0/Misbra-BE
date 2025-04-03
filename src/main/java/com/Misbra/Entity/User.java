@@ -3,7 +3,9 @@ package com.Misbra.Entity;
 import com.Misbra.Enum.RecordStatus;
 import com.Misbra.Enum.RoleEnum;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,6 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import software.amazon.awssdk.annotations.NotNull;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -50,6 +53,12 @@ public class User implements UserDetails { // Implement UserDetails
 
     @Builder.Default
     private boolean enabled = true;
+
+    @CreatedDate
+    private Instant createdAt;
+
+    @LastModifiedDate
+    private Instant updatedAt;
 
     // Helper method to add answered question
     public void addAnsweredQuestion(String questionId) {
