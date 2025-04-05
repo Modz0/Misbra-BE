@@ -15,7 +15,6 @@ public class QuestionDTO {
     private String answer; // Only included in responses for answered questions
     private Difficulty difficulty;
     private int points;
-    private boolean isAnswered;
     private String questionPhotoId;
     private String answerPhotoId;
     private String questionThumbnailUrl;
@@ -29,7 +28,6 @@ public class QuestionDTO {
         dto.setQuestion(this.question);
         dto.setDifficulty(this.difficulty);
         dto.setPoints(this.points);
-        dto.setAnswered(this.isAnswered);
         // Notice answer is not set
         return dto;
     }
