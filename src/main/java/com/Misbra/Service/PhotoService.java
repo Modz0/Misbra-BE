@@ -25,4 +25,6 @@ public interface PhotoService {
     List<PhotoDTO> findPhotosById(List<String> photoIds);
 
     List<String> findPhotosByReviewId(String reviewId);
+
+    boolean deletePhotoById(String photoId);
 }

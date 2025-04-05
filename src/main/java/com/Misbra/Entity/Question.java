@@ -27,10 +27,6 @@ public class Question {
     @Indexed
     private Difficulty difficulty;  // For difficulty-based filtering
 
-    @Indexed
-    private boolean isAnswered;  // To quickly find answered/unanswered questions
-
-
     // Other fields that don't need indexing
     private String question;
     private String answer;

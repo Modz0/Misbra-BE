@@ -6,6 +6,7 @@ import com.Misbra.Entity.Category;
 import com.Misbra.Enum.referenceType;
 import com.Misbra.Mapper.CategoryMapper;
 import com.Misbra.Repository.CategoryRepository;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -149,6 +150,12 @@ public class CategoryServiceImp implements CategoryService {
 
         // Update the fields
         existingCategory.setCategoryName(categoryDTO.getCategoryName());
+
+        if(!ObjectUtils.isEmpty(existingCategory.getThumbnailPhotoId())){
+            photoService.deletePhotoById(existingCategory.getThumbnailPhotoId());
+        }
+
+
         existingCategory.setThumbnailPhotoId(categoryDTO.getThumbnailPhotoId());
 
         Category updatedCategory = categoryRepository.save(existingCategory);
@@ -159,14 +166,14 @@ public class CategoryServiceImp implements CategoryService {
     @Override
     public void deleteCategory(String id) {
         Category category = categoryRepository.findById(id)
-
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
 
         questionService.findQuestionByCategory(id).forEach(question -> {
             questionService.deleteQuestion(question.getQuestionId());
         });
-
-
+        if(category.getThumbnailPhotoId()!=null){
+            photoService.deletePhotoById(category.getThumbnailPhotoId());
+        }
         categoryRepository.delete(category);
     }
 

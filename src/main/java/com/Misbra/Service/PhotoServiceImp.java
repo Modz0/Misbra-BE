@@ -239,6 +239,40 @@ public class PhotoServiceImp implements PhotoService {
         return photoUrls;
     }
 
+    @Override
+    public boolean deletePhotoById(String photoId) {
+        if (photoId == null) {
+            List<ValidationErrorDTO> errors = new ArrayList<>();
+            errors.add(new ValidationErrorDTO(
+                    BusinessMessageKeys.PHOTO_NOT_FOUND,
+                    new String[]{"photoId is null"}
+            ));
+            exceptionUtils.throwValidationException(errors);
+            return false; // unreachable
+        }
+
+        Optional<Photo> photoOpt = photoRepository.findById(photoId);
+        if (photoOpt.isEmpty()) {
+            // Throw your custom not-found exception or return false
+            List<ValidationErrorDTO> errors = new ArrayList<>();
+            errors.add(new ValidationErrorDTO(
+                    BusinessMessageKeys.PHOTO_NOT_FOUND,
+                    new String[]{"No photo with ID: " + photoId}
+            ));
+            exceptionUtils.throwValidationException(errors);
+            return false; // unreachable
+        }
+
+        Photo photoEntity = photoOpt.get();
+        String s3Key = photoEntity.getS3key();
+        boolean deletedFromS3 = s3Service.deleteImage(s3Key);
+        if (deletedFromS3) {
+            // Only delete from DB if S3 deletion was successful (optional logic)
+            photoRepository.delete(photoEntity);
+        }
+        return deletedFromS3;
+    }
+
     // --------------------- Private Helper Methods ---------------------
 
     /**

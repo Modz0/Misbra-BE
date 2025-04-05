@@ -157,7 +157,6 @@ public class QuestionServiceImpl implements QuestionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Question with ID " + questionDTO.getQuestionId() + " not found");
         }
-
         Question question = questionMapper.toEntity(questionDTO);
         Question updatedQuestion = questionRepository.save(question);
         return questionMapper.toDTO(updatedQuestion);
@@ -169,6 +168,20 @@ public class QuestionServiceImpl implements QuestionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Question with ID " + id + " not found");
         }
+        Question question = questionRepository.findById(id).orElse(null);
+        if(ObjectUtils.isEmpty(question)){
+            throw new RuntimeException("Category not found with id: " + id);
+        }
+        if (!ObjectUtils.isEmpty(question.getQuestionPhotoId())){
+            photoService.deletePhotoById(question.getQuestionPhotoId());
+        }
+
+
+
+        if (!ObjectUtils.isEmpty(question.getAnswerPhotoId())){
+            photoService.deletePhotoById(question.getAnswerPhotoId());
+        }
+
         questionRepository.deleteById(id);
     }
     @Override
@@ -347,6 +360,15 @@ public class QuestionServiceImpl implements QuestionService {
     @Override
     public String uploadQuestionPhotos(String questionId, MultipartFile file) throws IOException {
         PhotoDTO newPhoto = photoService.uploadPhoto(referenceType.QUESTION, questionId, file);
+        Question question = questionRepository.findById(questionId).orElse(null);
+        if(ObjectUtils.isEmpty(question)){
+            throw new RuntimeException("Category not found with id: " + questionId);
+        }
+        if (!ObjectUtils.isEmpty(question.getQuestionPhotoId())){
+            photoService.deletePhotoById(question.getQuestionPhotoId());
+        }
+
+
         setQuestionThumbnail(questionId, newPhoto.getPhotoId());
         return photoService.getPresignedUrl(newPhoto.getPhotoId());
     }
@@ -354,6 +376,15 @@ public class QuestionServiceImpl implements QuestionService {
     @Override
     public String uploadAnswerPhotos(String questionId, MultipartFile file) throws IOException {
         PhotoDTO newPhoto = photoService.uploadPhoto(referenceType.ANSWER, questionId, file);
+        Question question = questionRepository.findById(questionId).orElse(null);
+
+        if(ObjectUtils.isEmpty(question)){
+            throw new RuntimeException("Category not found with id: " + questionId);
+        }
+
+        if (!ObjectUtils.isEmpty(question.getAnswerPhotoId())){
+            photoService.deletePhotoById(question.getAnswerPhotoId());
+        }
         setAnswerThumbnail(questionId, newPhoto.getPhotoId());
         return photoService.getPresignedUrl(newPhoto.getPhotoId());
     }
