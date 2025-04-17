@@ -6,6 +6,7 @@ import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.Entity.Category;
 import com.Misbra.Entity.Question;
 import com.Misbra.Enum.Difficulty;
+import com.Misbra.Enum.QuestionType;
 import com.Misbra.Enum.referenceType;
 import com.Misbra.Mapper.QuestionMapper;
 import com.Misbra.Repository.QuestionRepository;
@@ -27,6 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class QuestionServiceImpl implements QuestionService {
@@ -50,68 +52,56 @@ public class QuestionServiceImpl implements QuestionService {
         this.photoService = photoService;
     }
     @Override
-    public Page<QuestionDTO> getAllQuestions(Pageable pageable , List<String> selectedCategory,
-                                              List<Difficulty> selectedDifficulty) {
-        Page<Question> questionPage;
+    public Page<QuestionDTO> getAllQuestions(Pageable pageable,
+                                             List<String>       selectedCategory,
+                                             List<Difficulty>   selectedDifficulty,
+                                             List<QuestionType> selectedQuestionType) {
 
-        if (ObjectUtils.isEmpty(selectedCategory) && ObjectUtils.isEmpty(selectedDifficulty)) {
-            questionPage = questionRepository.findAll(pageable);
-        } else if (ObjectUtils.isEmpty(selectedCategory)) {
-            questionPage = questionRepository.findByDifficultyIn(pageable, selectedDifficulty);
-        } else if (ObjectUtils.isEmpty(selectedDifficulty)) {
-            questionPage = questionRepository.findByCategoryIn(pageable, selectedCategory);
-        } else {
-            questionPage = questionRepository.findByCategoryInAndDifficultyIn(pageable, selectedCategory, selectedDifficulty);
+        /* ---------- build the query dynamically ---------- */
+        Query query = new Query();
+
+        if (selectedCategory != null && !selectedCategory.isEmpty()) {
+            query.addCriteria(Criteria.where("category").in(selectedCategory));
         }
 
-        List<Question> questions = questionPage.getContent();
+        if (selectedDifficulty != null && !selectedDifficulty.isEmpty()) {
+            query.addCriteria(Criteria.where("difficulty").in(selectedDifficulty));
+        }
 
-        // Gather all photo IDs (both question and answer)
-        List<String> questionPhotoIds = questions.stream()
-                .map(Question::getQuestionPhotoId)
+        if (selectedQuestionType != null && !selectedQuestionType.isEmpty()) {
+            query.addCriteria(Criteria.where("questionType").in(selectedQuestionType));
+        }
+
+        long total = mongoTemplate.count(query, Question.class);   // total before pagination
+        query.with(pageable);                                      // apply limit / skip
+
+        List<Question> questions = mongoTemplate.find(query, Question.class);
+
+        /* ---------- map to DTOs & enrich with thumbnails (unchanged) ---------- */
+        List<String> allPhotoIds = Stream.concat(
+                        questions.stream().map(Question::getQuestionPhotoId),
+                        questions.stream().map(Question::getAnswerPhotoId))
                 .filter(Objects::nonNull)
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
-        List<String> answerPhotoIds = questions.stream()
-                .map(Question::getAnswerPhotoId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // Combine all photo IDs
-        List<String> allPhotoIds = new ArrayList<>();
-        allPhotoIds.addAll(questionPhotoIds);
-        allPhotoIds.addAll(answerPhotoIds);
-
-        // Convert questions to DTOs
-        List<QuestionDTO> questionDTOs = questions.stream()
+        List<QuestionDTO> dtoList = questions.stream()
                 .map(questionMapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
 
-        // Get presigned URLs for all thumbnails
         if (!allPhotoIds.isEmpty()) {
-            Map<String, String> presignedUrls = photoService.getBulkPresignedUrls(allPhotoIds);
-
+            Map<String, String> urls = photoService.getBulkPresignedUrls(allPhotoIds);
             for (int i = 0; i < questions.size(); i++) {
-                Question question = questions.get(i);
-                QuestionDTO dto = questionDTOs.get(i);
-
-                // Set question thumbnail URL
-                if (question.getQuestionPhotoId() != null &&
-                        presignedUrls.containsKey(question.getQuestionPhotoId())) {
-                    dto.setQuestionThumbnailUrl(presignedUrls.get(question.getQuestionPhotoId()));
-                }
-
-                // Set answer thumbnail URL
-                if (question.getAnswerPhotoId() != null &&
-                        presignedUrls.containsKey(question.getAnswerPhotoId())) {
-                    dto.setAnswerThumbnailUrl(presignedUrls.get(question.getAnswerPhotoId()));
-                }
+                Question     q  = questions.get(i);
+                QuestionDTO  d  = dtoList.get(i);
+                if (q.getQuestionPhotoId() != null)
+                    d.setQuestionThumbnailUrl(urls.get(q.getQuestionPhotoId()));
+                if (q.getAnswerPhotoId() != null)
+                    d.setAnswerThumbnailUrl(urls.get(q.getAnswerPhotoId()));
             }
         }
 
-        return new PageImpl<>(questionDTOs, pageable, questionPage.getTotalElements());
+        return new PageImpl<>(dtoList, pageable, total);
     }
 
 
@@ -236,9 +226,10 @@ public class QuestionServiceImpl implements QuestionService {
 
 
     @Override
-    public List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty) {
+    public List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty, QuestionType questionType) {
         // Get list of questions the user has already answered
         List<String> answeredQuestionIds = userService.getAnsweredQuestions(userId);
+
 
         // Create query to find questions not in the answered list
         Query query = new Query();
@@ -249,6 +240,12 @@ public class QuestionServiceImpl implements QuestionService {
         // Add category and difficulty criteria
         query.addCriteria(Criteria.where("category").is(category));
         query.addCriteria(Criteria.where("difficulty").is(difficulty));
+        if(questionType.equals(QuestionType.PAYED)){
+            query.addCriteria(Criteria.where("questionType").in(questionType,QuestionType.FREE));
+
+        }else {
+            query.addCriteria(Criteria.where("questionType").is(questionType));
+        }
 
         // Add sorting and limit
         query.with(Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -256,24 +253,24 @@ public class QuestionServiceImpl implements QuestionService {
 
         List<Question> questions = mongoTemplate.find(query, Question.class);
 
-        // If we don't have enough questions, get some from the already answered ones
-        if (questions.size() < limit) {
-            int remainingQuestions = limit - questions.size();
-
-            Query answeredQuery = new Query();
-            answeredQuery.addCriteria(Criteria.where("category").is(category));
-            answeredQuery.addCriteria(Criteria.where("difficulty").is(difficulty));
-
-            if (!answeredQuestionIds.isEmpty()) {
-                answeredQuery.addCriteria(Criteria.where("questionId").in(answeredQuestionIds));
-            }
-
-            answeredQuery.with(Sort.by(Sort.Direction.DESC, "createdAt"));
-            answeredQuery.limit(remainingQuestions);
-
-            List<Question> answeredQuestions = mongoTemplate.find(answeredQuery, Question.class);
-            questions.addAll(answeredQuestions);
-        }
+//        // If we don't have enough questions, get some from the already answered ones
+//        if (questions.size() < limit) {
+//            int remainingQuestions = limit - questions.size();
+//
+//            Query answeredQuery = new Query();
+//            answeredQuery.addCriteria(Criteria.where("category").is(category));
+//            answeredQuery.addCriteria(Criteria.where("difficulty").is(difficulty));
+//
+//            if (!answeredQuestionIds.isEmpty()) {
+//                answeredQuery.addCriteria(Criteria.where("questionId").in(answeredQuestionIds));
+//            }
+//
+//            answeredQuery.with(Sort.by(Sort.Direction.DESC, "createdAt"));
+//            answeredQuery.limit(remainingQuestions);
+//
+//            List<Question> answeredQuestions = mongoTemplate.find(answeredQuery, Question.class);
+//            questions.addAll(answeredQuestions);
+//        }
 
         // Gather all photo IDs (both question and answer)
         List<String> questionPhotoIds = questions.stream()
@@ -320,7 +317,7 @@ public class QuestionServiceImpl implements QuestionService {
         return questionDTOs;
     }
     @Override
-    public int calculateAvailableGamesCount(String categoryId, String userId) {
+    public int calculateAvailableGamesCount(String categoryId, String userId , QuestionType questionType) {
         List<String> answeredQuestionIds = userService.getAnsweredQuestions(userId);
 
         // Create query to find questions not in the answered list
@@ -331,6 +328,13 @@ public class QuestionServiceImpl implements QuestionService {
 
         // Add category criteria
         query.addCriteria(Criteria.where("category").is(categoryId));
+
+        if(questionType.equals(QuestionType.PAYED)){
+            query.addCriteria(Criteria.where("questionType").in(questionType,QuestionType.FREE));
+
+        }else {
+            query.addCriteria(Criteria.where("questionType").is(questionType));
+        }
 
         // Add sorting by creation date
         query.with(Sort.by(Sort.Direction.DESC, "createdAt"));

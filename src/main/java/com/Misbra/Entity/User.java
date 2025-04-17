@@ -50,6 +50,10 @@ public class User implements UserDetails { // Implement UserDetails
     private RecordStatus recordStatus;
 
     private RoleEnum role;
+    @Builder.Default
+    private Long numberOfGamesPlayed =0L;
+    @Builder.Default
+    private Long numberOfGamesRemaining=0L;
 
     @Builder.Default
     private boolean enabled = true;

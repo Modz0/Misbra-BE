@@ -210,6 +210,31 @@ public class UserServiceImp implements UserService {
         return user.map(u -> RoleEnum.ADMIN.equals(u.getRole()))
                 .orElse(false);
     }
+    @Override
+   public void incrementGamesPlayed(String userId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "User with ID " + userId + " not found"));
+
+        user.setNumberOfGamesPlayed(user.getNumberOfGamesPlayed() + 1);
+        userRepository.save(user);
+    }
+    @Override
+    public Long getRemainingGames(String userId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "User with ID " + userId + " not found"));
+        return user.getNumberOfGamesRemaining();
+    }
+    @Override
+    public void decreesGamesPlayed(String userId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "User with ID " + userId + " not found"));
+
+        user.setNumberOfGamesRemaining(user.getNumberOfGamesRemaining()-1);
+        userRepository.save(user);
+    }
 
 
 

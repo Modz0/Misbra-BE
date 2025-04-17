@@ -20,4 +20,7 @@ public interface UserService {
     void addAnsweredQuestion(String userId, List<String> questionId);
     void clearQuestionRecord (String userId);
     boolean isAdmin(String phone);
+    void incrementGamesPlayed(String userId);
+    Long getRemainingGames(String userId);
+    void decreesGamesPlayed(String userId);
 }

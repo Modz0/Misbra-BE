@@ -3,6 +3,7 @@ package com.Misbra.Service;
 import com.Misbra.DTO.CategoryDTO;
 import com.Misbra.DTO.PhotoDTO;
 import com.Misbra.Entity.Category;
+import com.Misbra.Enum.QuestionType;
 import com.Misbra.Enum.referenceType;
 import com.Misbra.Mapper.CategoryMapper;
 import com.Misbra.Repository.CategoryRepository;
@@ -29,13 +30,15 @@ public class CategoryServiceImp implements CategoryService {
     private final CategoryMapper categoryMapper;
     private final PhotoService photoService;
     private final QuestionService questionService;
+    private final UserService userService;
 
     @Autowired
-    public CategoryServiceImp(CategoryRepository categoryRepository, CategoryMapper categoryMapper, PhotoService photoService, QuestionService questionService) {
+    public CategoryServiceImp(CategoryRepository categoryRepository, CategoryMapper categoryMapper, PhotoService photoService, QuestionService questionService, UserService userService) {
         this.categoryRepository = categoryRepository;
         this.categoryMapper = categoryMapper;
         this.photoService = photoService;
         this.questionService = questionService;
+        this.userService = userService;
     }
 
     @Override
@@ -72,6 +75,16 @@ public class CategoryServiceImp implements CategoryService {
 
     @Override
     public Page<CategoryDTO> getAllCategoriesForUser(Pageable pageable, String userId) {
+
+        QuestionType questionType;
+        //if a user Has Payed game set the type to Paid
+        if(userService.getRemainingGames(userId) > 0) {
+            questionType = QuestionType.PAYED;
+        } else {
+            questionType = QuestionType.FREE;
+        }
+
+
         // Get paginated data directly from repository
         Page<Category> categoryPage = categoryRepository.findAll(pageable);
 
@@ -81,7 +94,7 @@ public class CategoryServiceImp implements CategoryService {
                 .map(categoryMapper::toDTO)
                 .collect(Collectors.toList());
 
-        categoryDTOs.forEach(categoryDTO -> {categoryDTO.setNumberOfGamesLeft(questionService.calculateAvailableGamesCount(categoryDTO.getCategoryId(), userId));});
+        categoryDTOs.forEach(categoryDTO -> {categoryDTO.setNumberOfGamesLeft(questionService.calculateAvailableGamesCount(categoryDTO.getCategoryId(), userId,questionType));});
 
 
         // Gather all thumbnail IDs from this page only

@@ -2,6 +2,7 @@ package com.Misbra.Service;
 
 import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.Enum.Difficulty;
+import com.Misbra.Enum.QuestionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface QuestionService {
-    Page<QuestionDTO> getAllQuestions(  Pageable pageable ,List<String> selectedCategory, List<Difficulty> selectedDifficulty);
+    Page<QuestionDTO> getAllQuestions(  Pageable pageable ,List<String> selectedCategory, List<Difficulty> selectedDifficulty, List<QuestionType> questionTypes);
 
     QuestionDTO getQuestionById(String id);
 
@@ -25,9 +26,9 @@ public interface QuestionService {
     Page<QuestionDTO> getQuestionsByCategory(String category, Pageable pageable);
 
 
-    List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty);
+    List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty, QuestionType questionType);
 
-    int calculateAvailableGamesCount(String categoryId, String userId);
+    int calculateAvailableGamesCount(String categoryId, String userId , QuestionType questionType);
 
     void clearQuestionRecord(String userId);
     String uploadQuestionPhotos(String questionId, MultipartFile file) throws IOException;

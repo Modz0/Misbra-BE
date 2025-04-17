@@ -1,16 +1,18 @@
 package com.Misbra.Service;
 
 import com.Misbra.Component.SessionQuestions;
-import com.Misbra.Component.TeamPowerup;
 import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.DTO.SessionDTO;
 import com.Misbra.Entity.Session;
 import com.Misbra.Enum.Difficulty;
 import com.Misbra.Enum.PowerupType;
+import com.Misbra.Enum.QuestionType;
 import com.Misbra.Enum.SessionStatus;
 import com.Misbra.Exception.Utils.ExceptionUtils;
+import com.Misbra.Exception.Validation.ValidationErrorDTO;
 import com.Misbra.Mapper.SessionMapper;
 import com.Misbra.Repository.SessionRepository;
+import com.Misbra.Utils.BusinessMessageKeys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -266,6 +268,12 @@ public class SessionServiceImp implements SessionService {
 
     @Override
     public SessionDTO createSessionWithQuestions(String team1Id, String team2Id, String userId, List<String> categories) {
+
+        QuestionType sessionQuestionType=QuestionType.FREE;
+
+        if(userService.getRemainingGames(userId)>0){
+            sessionQuestionType=QuestionType.PAYED;
+        }
         // Create a new session with initial details
         SessionDTO sessionDTO = new SessionDTO();
         sessionDTO.setUserId(userId);
@@ -277,6 +285,7 @@ public class SessionServiceImp implements SessionService {
         sessionDTO.setCategoryQuestionsMap(new HashMap<>());
         sessionDTO.setAnsweredQuestions(0);
         sessionDTO.setSessionStatus(SessionStatus.IN_PROGRESS);
+        sessionDTO.setSessionQuestionType(sessionQuestionType);
 
         // Save the initial session to get an ID
         Session session = sessionMapper.toEntity(sessionDTO);
@@ -289,17 +298,17 @@ public class SessionServiceImp implements SessionService {
             List<String> allQuestionIds = new ArrayList<>();
 
             // Get easy questions (2)
-            List<QuestionDTO> easyQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, Difficulty.EASY);
+            List<QuestionDTO> easyQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, Difficulty.EASY,sessionQuestionType);
             addQuestionsToSession(sessionId, easyQuestions, category, Difficulty.EASY);
             allQuestionIds.addAll(easyQuestions.stream().map(QuestionDTO::getQuestionId).toList());
 
             // Get medium questions (4)
-            List<QuestionDTO> mediumQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 4, Difficulty.MEDIUM);
+            List<QuestionDTO> mediumQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 4, Difficulty.MEDIUM,sessionQuestionType);
             addQuestionsToSession(sessionId, mediumQuestions, category, Difficulty.MEDIUM);
             allQuestionIds.addAll(mediumQuestions.stream().map(QuestionDTO::getQuestionId).toList());
 
             // Get hard questions (2)
-            List<QuestionDTO> hardQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, Difficulty.HARD);
+            List<QuestionDTO> hardQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, Difficulty.HARD,sessionQuestionType);
             addQuestionsToSession(sessionId, hardQuestions, category, Difficulty.HARD);
             allQuestionIds.addAll(hardQuestions.stream().map(QuestionDTO::getQuestionId).toList());
 
@@ -308,6 +317,13 @@ public class SessionServiceImp implements SessionService {
             // Add these questions to the user's answered questions list
             userService.addAnsweredQuestion(userId, allQuestionIds);
         }
+        userService.incrementGamesPlayed(userId);
+        //decrees the game only if it was payed questions
+        if(sessionQuestionType.equals(QuestionType.PAYED)){
+            userService.decreesGamesPlayed(userId);
+        }
+
+
         // Get the complete session with all added questions
         return getSessionById(sessionId);
     }

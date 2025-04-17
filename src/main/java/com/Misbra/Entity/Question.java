@@ -1,6 +1,7 @@
 package com.Misbra.Entity;
 
 import com.Misbra.Enum.Difficulty;
+import com.Misbra.Enum.QuestionType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,6 +34,7 @@ public class Question {
     private int points;
     private String questionPhotoId;
     private String answerPhotoId;
+    private QuestionType questionType;
 
     @CreatedDate
     private Instant createdAt;

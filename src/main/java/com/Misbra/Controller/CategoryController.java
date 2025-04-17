@@ -38,6 +38,17 @@ public class CategoryController {
         return ResponseEntity.ok(categories);
     }
 
+    @GetMapping("/public")
+    public ResponseEntity<Page<CategoryDTO>> getAllCategoriesPublic(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<CategoryDTO> categories = categoryService.getAllCategories(pageable);
+        return ResponseEntity.ok(categories);
+    }
+
     @GetMapping("/user-category")
     public ResponseEntity<Page<CategoryDTO>> getAllCategoriesForUser(
             @RequestParam(defaultValue = "0") int page,

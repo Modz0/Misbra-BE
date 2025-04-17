@@ -1,6 +1,7 @@
 package com.Misbra.DTO;
 
 import com.Misbra.Enum.Difficulty;
+import com.Misbra.Enum.QuestionType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ public class QuestionDTO {
     private String answerPhotoId;
     private String questionThumbnailUrl;
     private String answerThumbnailUrl;
+    private QuestionType questionType;
 
     // For client responses (doesn't include correct answer)
     public QuestionDTO hideAnswer() {

@@ -24,6 +24,8 @@ public class UserDTO {
     private RecordStatus recordStatus;
     private RoleEnum role;
     private boolean enabled;
+    private Long numberOfGamesPlayed;
+    private Long numberOfGamesRemaining;
     // Only track answered questions
     @Builder.Default
     private List<String> answeredQuestionIds = new ArrayList<>();

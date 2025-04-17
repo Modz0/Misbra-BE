@@ -3,6 +3,7 @@ package com.Misbra.Controller;
 import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.Entity.User;
 import com.Misbra.Enum.Difficulty;
+import com.Misbra.Enum.QuestionType;
 import com.Misbra.Service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,11 +36,12 @@ public class QuestionController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "9") int size,
             @RequestParam(required = false) List<String> selectedCategory,
-            @RequestParam(required = false) List<Difficulty> selectedDifficulty
+            @RequestParam(required = false) List<Difficulty> selectedDifficulty,
+            @RequestParam(required = false) List<QuestionType> selectedQuestionType
 
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(questionService.getAllQuestions(pageable,selectedCategory,selectedDifficulty));
+        return ResponseEntity.ok(questionService.getAllQuestions(pageable,selectedCategory,selectedDifficulty,selectedQuestionType));
     }
 
     @GetMapping("/{id}")
@@ -70,14 +72,14 @@ public class QuestionController {
         return ResponseEntity.ok(questionService.getQuestionsByCategory(category, pageable));
     }
 
-    @GetMapping("/unanswered")
-    public ResponseEntity<List<QuestionDTO>> getUnansweredQuestionsByCategory(
-            @RequestParam String userId,
-            @RequestParam String category,
-            @RequestParam(defaultValue = "10") int limit,
-    @RequestParam Difficulty difficulty) {
-        return ResponseEntity.ok(questionService.getUnansweredQuestionsByCategory(userId, category, limit,difficulty));
-    }
+//    @GetMapping("/unanswered")
+//    public ResponseEntity<List<QuestionDTO>> getUnansweredQuestionsByCategory(
+//            @RequestParam String userId,
+//            @RequestParam String category,
+//            @RequestParam(defaultValue = "10") int limit,
+//    @RequestParam Difficulty difficulty) {
+//        return ResponseEntity.ok(questionService.getUnansweredQuestionsByCategory(userId, category, limit,difficulty));
+//    }
     @PostMapping("/{questionId}/add-photo")
     public ResponseEntity<?> uploadQuestionPhotos(
             @PathVariable String questionId,

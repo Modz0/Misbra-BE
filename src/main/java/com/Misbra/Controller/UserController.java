@@ -67,4 +67,10 @@ public class UserController {
         return ResponseEntity.ok(userService.isAdmin(user.getPhone()));
     }
 
+    @GetMapping("/games-remaining")
+    public ResponseEntity<Long> getRemainingGames(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(userService.getRemainingGames(user.getUserId()));
+    }
+
+
 }

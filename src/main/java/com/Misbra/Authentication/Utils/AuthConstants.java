@@ -22,7 +22,8 @@ public class AuthConstants {
             "/v3/api-docs",
             "/v3/api-docs/**",
             "/swagger-resources/**",
-            "/webjars/**"
+            "/webjars/**",
+            "/api/categories/public"
     };
     // Error Messages
     public static final String OTP_EXPIRED = "OTP has expired";
