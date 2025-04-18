@@ -241,7 +241,7 @@ public class QuestionServiceImpl implements QuestionService {
         query.addCriteria(Criteria.where("category").is(category));
         query.addCriteria(Criteria.where("difficulty").is(difficulty));
         if(questionType.equals(QuestionType.PAYED)){
-            query.addCriteria(Criteria.where("questionType").in(questionType,QuestionType.FREE));
+            query.addCriteria(Criteria.where("questionType").in(questionType));
 
         }else {
             query.addCriteria(Criteria.where("questionType").is(questionType));
