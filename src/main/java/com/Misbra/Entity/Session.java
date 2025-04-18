@@ -4,6 +4,7 @@ import com.Misbra.Component.SessionQuestions;
 import com.Misbra.Component.TeamPowerup;
 import com.Misbra.Enum.PowerupType;
 import com.Misbra.Enum.SessionStatus;
+import com.Misbra.Enum.SessionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,6 +38,7 @@ public class Session {
     private SessionStatus sessionStatus;
     private Map<String, Integer> powerups;
     private Map<String, List<SessionQuestions>> categoryQuestionsMap = new HashMap<>();
+    private SessionType sessionType;
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate

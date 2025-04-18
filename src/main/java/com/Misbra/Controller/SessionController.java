@@ -79,7 +79,7 @@ public class SessionController {
             @AuthenticationPrincipal User currentUser,
             @RequestBody SessionDTO session) {
         return new ResponseEntity<>(
-                sessionService.createSessionWithQuestions(session.getTeam1name(), session.getTeam2name(), currentUser.getUserId(), session.getGameCategories()),
+                sessionService.createSessionWithQuestions(session.getTeam1name(), session.getTeam2name(), currentUser.getUserId(), session.getGameCategories(),session.getSessionType()),
                 HttpStatus.CREATED
         );
     }

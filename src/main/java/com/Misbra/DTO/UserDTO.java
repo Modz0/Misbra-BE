@@ -26,6 +26,7 @@ public class UserDTO {
     private boolean enabled;
     private Long numberOfGamesPlayed;
     private Long numberOfGamesRemaining;
+    private Long numberOfFreeGames;
     // Only track answered questions
     @Builder.Default
     private List<String> answeredQuestionIds = new ArrayList<>();

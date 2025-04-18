@@ -5,6 +5,7 @@ import com.Misbra.Component.TeamPowerup;
 import com.Misbra.Enum.PowerupType;
 import com.Misbra.Enum.QuestionType;
 import com.Misbra.Enum.SessionStatus;
+import com.Misbra.Enum.SessionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,6 +33,7 @@ public class SessionDTO {
     private int answeredQuestions;
     private SessionStatus sessionStatus;
     private QuestionType sessionQuestionType;
+    private SessionType sessionType;
     // Track powerup usage for each team
     @Builder.Default
     private List<TeamPowerup> team1Powerups = new ArrayList<>();

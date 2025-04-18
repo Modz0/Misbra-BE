@@ -56,6 +56,9 @@ public class User implements UserDetails { // Implement UserDetails
     private Long numberOfGamesRemaining=0L;
 
     @Builder.Default
+    private Long numberOfFreeGames=2L;
+
+    @Builder.Default
     private boolean enabled = true;
 
     @CreatedDate

@@ -4,10 +4,7 @@ import com.Misbra.Component.SessionQuestions;
 import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.DTO.SessionDTO;
 import com.Misbra.Entity.Session;
-import com.Misbra.Enum.Difficulty;
-import com.Misbra.Enum.PowerupType;
-import com.Misbra.Enum.QuestionType;
-import com.Misbra.Enum.SessionStatus;
+import com.Misbra.Enum.*;
 import com.Misbra.Exception.Utils.ExceptionUtils;
 import com.Misbra.Exception.Validation.ValidationErrorDTO;
 import com.Misbra.Mapper.SessionMapper;
@@ -267,13 +264,13 @@ public class SessionServiceImp implements SessionService {
 
 
     @Override
-    public SessionDTO createSessionWithQuestions(String team1Id, String team2Id, String userId, List<String> categories) {
-
+    public SessionDTO createSessionWithQuestions(String team1Id, String team2Id, String userId, List<String> categories, SessionType sessionType) {
         QuestionType sessionQuestionType=QuestionType.FREE;
 
-        if(userService.getRemainingGames(userId)>0){
+        if(sessionType == SessionType.PAYED) {
             sessionQuestionType=QuestionType.PAYED;
         }
+
         // Create a new session with initial details
         SessionDTO sessionDTO = new SessionDTO();
         sessionDTO.setUserId(userId);
@@ -318,9 +315,13 @@ public class SessionServiceImp implements SessionService {
             userService.addAnsweredQuestion(userId, allQuestionIds);
         }
         userService.incrementGamesPlayed(userId);
-        //decrees the game only if it was payed questions
-        if(sessionQuestionType.equals(QuestionType.PAYED)){
+
+
+        if(sessionType == SessionType.PAYED) {
             userService.decreesGamesPlayed(userId);
+        }else
+        {
+            userService.decreesFreeGamesPlayed(userId);
         }
 
 

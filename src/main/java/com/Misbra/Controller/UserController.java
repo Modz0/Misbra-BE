@@ -71,6 +71,10 @@ public class UserController {
     public ResponseEntity<Long> getRemainingGames(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(userService.getRemainingGames(user.getUserId()));
     }
+    @GetMapping("/free-games")
+    public ResponseEntity<Long> getFreeGames(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(userService.getFreeGames(user.getUserId()));
+    }
 
 
 }

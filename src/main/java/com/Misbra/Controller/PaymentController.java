@@ -2,8 +2,11 @@ package com.Misbra.Controller;
 
 import com.Misbra.DTO.PaymentDTO;
 
+import com.Misbra.DTO.PurchaseBundleRequest;
+import com.Misbra.Entity.User;
 import com.Misbra.Service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,10 +18,10 @@ public class PaymentController {
 
     @PostMapping("/purchase")
     public PaymentDTO purchaseBundle(
-            @RequestParam String userId,
-            @RequestParam String bundleId,
-            @RequestParam(required = false) String promoCode
+            @AuthenticationPrincipal User user,
+            @RequestBody PurchaseBundleRequest  purchaseBundleRequest
+
     ) {
-        return paymentService.purchaseBundle(userId, bundleId, promoCode);
+        return paymentService.purchaseBundle(user.getUserId(), purchaseBundleRequest.getBundleId(), purchaseBundleRequest.getPromoCode());
     }
 }

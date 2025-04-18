@@ -235,6 +235,23 @@ public class UserServiceImp implements UserService {
         user.setNumberOfGamesRemaining(user.getNumberOfGamesRemaining()-1);
         userRepository.save(user);
     }
+    @Override
+    public Long getFreeGames(String userId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "User with ID " + userId + " not found"));
+        return user.getNumberOfFreeGames();
+    }
+
+    @Override
+    public void decreesFreeGamesPlayed(String userId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "User with ID " + userId + " not found"));
+
+        user.setNumberOfFreeGames(user.getNumberOfFreeGames()-1);
+        userRepository.save(user);
+    }
 
 
 

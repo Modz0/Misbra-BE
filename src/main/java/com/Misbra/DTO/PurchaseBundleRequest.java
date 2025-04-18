@@ -1,0 +1,15 @@
+package com.Misbra.DTO;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PurchaseBundleRequest {
+
+    private String bundleId ;
+    private  String promoCode ;
+}

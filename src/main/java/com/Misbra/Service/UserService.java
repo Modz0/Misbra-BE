@@ -22,5 +22,7 @@ public interface UserService {
     boolean isAdmin(String phone);
     void incrementGamesPlayed(String userId);
     Long getRemainingGames(String userId);
+    Long getFreeGames(String userId);
     void decreesGamesPlayed(String userId);
+    void decreesFreeGamesPlayed(String userId);
 }

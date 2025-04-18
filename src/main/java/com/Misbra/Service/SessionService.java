@@ -4,6 +4,7 @@ import com.Misbra.Component.SessionQuestions;
 import com.Misbra.Component.TeamPowerup;
 import com.Misbra.DTO.SessionDTO;
 import com.Misbra.Entity.Session;
+import com.Misbra.Enum.SessionType;
 
 import java.util.List;
 
@@ -90,7 +91,7 @@ public interface SessionService {
      * @param categories List of category names to include
      * @return the created session with questions
      */
-    SessionDTO createSessionWithQuestions(String team1Id, String team2Id, String userId, List<String> categories);
+    SessionDTO createSessionWithQuestions(String team1Id, String team2Id, String userId, List<String> categories, SessionType sessionType);
 
 
 
