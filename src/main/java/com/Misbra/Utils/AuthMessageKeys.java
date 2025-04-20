@@ -25,4 +25,5 @@ public final class AuthMessageKeys {
     public static final String OTP_REQUEST_LIMIT_EXCEEDED = "AUTH-ERR-0007";
     public static final String OTP_EXPIRED                = "AUTH-ERR-0008";
     public static final String OTP_INVALID                = "AUTH-ERR-0009";
+    public static final String OTP_INVALID_FORMAT     = "AUTH-ERR-0010";
 }

@@ -16,7 +16,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret}") // Ensure this is a Base64-encoded 256-bit key
+    @Value("${jwt.secret}")
     private String secretKey;
 
     @Value("${jwt.expiration}")

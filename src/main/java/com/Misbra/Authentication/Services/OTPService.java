@@ -25,12 +25,15 @@ public class OTPService {
     public String generateOTP(String phone) {
         validatePhoneNumber(phone);
 
-        String RequestCountKey = getRequestCountKey(phone);
-        Long currentCount = redisTemplate.opsForValue().increment(RequestCountKey,1);
-        if (currentCount!=null && currentCount>AuthConstants.MAX_OTP_ATTEMPTS) {
+        String requestCountKey = getRequestCountKey(phone);
+        Long currentCount = redisTemplate.opsForValue().increment(requestCountKey, 1);
+
+        if (currentCount != null && currentCount > AuthConstants.MAX_OTP_ATTEMPTS) {
             handleRateLimitExceeded(phone);
         }
-       redisTemplate.expire(RequestCountKey, AuthConstants.MAX_OTP_ATTEMPTS, TimeUnit.HOURS);
+
+        redisTemplate.expire(requestCountKey, AuthConstants.MAX_OTP_ATTEMPTS, TimeUnit.HOURS);
+
         String otp = generateSecureOTP();
         String otpKey = getOTPKey(phone);
 
@@ -38,26 +41,46 @@ public class OTPService {
 
         sendSMS(phone, AuthConstants.OTP_MESSAGE_PREFIX + otp);
 
-        return otp;
+        // Don't return the OTP - this is more secure
+        // Return success status instead
+        return "OTP_SENT";
     }
 
     public boolean validateOTP(String phone, String otp) {
         validatePhoneNumber(phone);
+        validateOTPFormat(otp);
 
         String otpKey = getOTPKey(phone);
         String storedOtp = redisTemplate.opsForValue().get(otpKey);
 
-        if(storedOtp==null ) {
+        // Early return for expired OTP
+        if (storedOtp == null) {
             handleExpiredOTP(phone);
+            return false;
         }
 
-        if(storedOtp!=null &&!storedOtp.equals(otp)){
+        // Early return for invalid OTP
+        if (!storedOtp.equals(otp)) {
             handleInvalidOTP(phone);
+            return false;
         }
+
+        // OTP is valid, now delete the key and reset count
         redisTemplate.delete(otpKey);
         resetRequestCount(phone);
         return true;
     }
+    private void validateOTPFormat(String otp) {
+        if (otp == null || otp.length() != AuthConstants.OTP_LENGTH || !otp.matches("\\d+")) {
+            List<ValidationErrorDTO> errors = new ArrayList<>();
+            errors.add(new ValidationErrorDTO(
+                    AuthMessageKeys.OTP_INVALID_FORMAT,
+                    new String[]{}
+            ));
+            exceptionUtils.throwValidationException(errors);
+        }
+    }
+
 
     private String generateSecureOTP() {
         SecureRandom random = new SecureRandom();
@@ -70,6 +93,7 @@ public class OTPService {
             throw new IllegalArgumentException(AuthConstants.PHONE_VALIDATION_MESSAGE);
         }
     }
+
     private String getOTPKey(String phone) {
         return "otp:" + phone;
     }
@@ -82,6 +106,8 @@ public class OTPService {
         redisTemplate.delete(getRequestCountKey(phone));
     }
 
+
+
     private void handleRateLimitExceeded(String phone) {
         List<ValidationErrorDTO> errors = new ArrayList<>();
         errors.add(new ValidationErrorDTO(
@@ -89,23 +115,24 @@ public class OTPService {
                 new String[]{phone}
         ));
         exceptionUtils.throwValidationException(errors);
-
     }
 
     private void handleExpiredOTP(String phone) {
-
         List<ValidationErrorDTO> errors = new ArrayList<>();
         errors.add(new ValidationErrorDTO(
                 AuthMessageKeys.OTP_EXPIRED,
                 new String[]{phone}
         ));
+        exceptionUtils.throwValidationException(errors);
     }
 
     private void handleInvalidOTP(String phone) {
         List<ValidationErrorDTO> errors = new ArrayList<>();
         errors.add(new ValidationErrorDTO(
                 AuthMessageKeys.OTP_INVALID,
-                new String[]{phone}));
+                new String[]{phone}
+        ));
+        exceptionUtils.throwValidationException(errors);
     }
 
     private void sendSMS(String phone, String message) {

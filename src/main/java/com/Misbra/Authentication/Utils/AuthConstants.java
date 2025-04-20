@@ -12,7 +12,7 @@ public class AuthConstants {
     // OTP Configuration
     public static final int OTP_LENGTH = 6;
     public static final int OTP_EXPIRATION_MINUTES = 5;
-    public static final int MAX_OTP_ATTEMPTS = 5;
+    public static final int MAX_OTP_ATTEMPTS = 3;
 
     // Security Constants
     public static final String[] PUBLIC_ENDPOINTS = {
