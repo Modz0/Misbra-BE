@@ -30,10 +30,10 @@ COPY ./src/main/resources/application.properties /app/config/application.propert
 COPY /etc/letsencrypt/live/misbra-api.org/keystore.p12 /app/config/keystore.p12
 
 # Expose HTTPS Port
-EXPOSE 8443
+EXPOSE 443
 
 # Set Environment Variables
-ENV SPRING_CONFIG_LOCATION=/app/config/application.properties
+ENV SPRING_CONFIG_LOCATION=file:/app/config/
 
 # Run Spring Boot App
 ENTRYPOINT ["java", "-jar", "app.jar"]
