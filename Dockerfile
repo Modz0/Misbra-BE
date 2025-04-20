@@ -1,39 +1,38 @@
 FROM eclipse-temurin:21-jdk-alpine as builder
 WORKDIR /app
 
-# Install Git & OpenSSH (for repo access)
+# Install Git & OpenSSH
 RUN apk add --no-cache git openssh
 
-# Set up SSH key for GitHub authentication
+# SSH setup for private repo access
 RUN mkdir -p /root/.ssh
 COPY id_rsa_github /root/.ssh/id_rsa
 RUN chmod 600 /root/.ssh/id_rsa
 RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
 
-# Clone the repo & build the JAR
+# Clone and build
 ARG GIT_REPO="git@github.com:Modz0/Misbra-BE.git"
 RUN git clone -b main $GIT_REPO .
 RUN chmod +x mvnw
 RUN ./mvnw clean package -DskipTests
 
-# Stage 2: Final Image
+# -----------------------------
+# Stage 2: Runtime Container
+# -----------------------------
 FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 
-# Copy built JAR
+# Copy only the built JAR
 COPY --from=builder /app/target/*.jar app.jar
 
-# Copy application properties
-COPY ./src/main/resources/application.properties /app/config/application.properties
+# Create config directory
+RUN mkdir -p /app/config
 
-
-COPY /etc/letsencrypt/live/misbra-api.org/keystore.p12 /app/config/keystore.p12
-
-# Expose HTTPS Port
+# Expose production HTTPS port
 EXPOSE 443
 
-# Set Environment Variables
-ENV SPRING_CONFIG_LOCATION=file:/app/config/
+# ✅ Let Spring load embedded configs & also anything from /app/config
+ENV SPRING_CONFIG_ADDITIONAL_LOCATION=file:/app/config/
 
-# Run Spring Boot App
+# Start the Spring Boot application
 ENTRYPOINT ["java", "-jar", "app.jar"]
