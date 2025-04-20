@@ -37,8 +37,9 @@ public class AuthConstants {
             "Phone number must be in E.164 format";
 
     // SMS Related
-    public static final String OTP_MESSAGE_PREFIX = "Your verification code is: ";
-
+    public static final String OTP_MESSAGE_TEMPLATE =
+            "Your Misbar verification code is: %1$s. This code will expire in 5 minutes.\n" +
+                    "Do not share this code with anyone.";
 
 
 

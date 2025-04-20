@@ -1,6 +1,7 @@
 package com.Misbra.Authentication.Services;
 
 import com.Misbra.Authentication.Utils.AuthConstants;
+import com.Misbra.Authentication.Utils.Result;
 import com.Misbra.Exception.Utils.ExceptionUtils;
 import com.Misbra.Exception.Validation.ValidationErrorDTO;
 import com.Misbra.Utils.AuthMessageKeys;
@@ -16,35 +17,64 @@ import java.util.concurrent.TimeUnit;
 public class OTPService {
    final private ExceptionUtils exceptionUtils;
    final private RedisTemplate<String, String> redisTemplate;
+   final private SMSService smsService;
 
-    public OTPService(ExceptionUtils exceptionUtils, RedisTemplate<String, String> redisTemplate) {
+    public OTPService(ExceptionUtils exceptionUtils, RedisTemplate<String, String> redisTemplate, SMSService smsService) {
         this.exceptionUtils = exceptionUtils;
         this.redisTemplate = redisTemplate;
+        this.smsService = smsService;
     }
 
-    public String generateOTP(String phone) {
+
+    public void generateOTP(String phone) {
         validatePhoneNumber(phone);
 
+        // Define keys for Redis
         String requestCountKey = getRequestCountKey(phone);
-        Long currentCount = redisTemplate.opsForValue().increment(requestCountKey, 1);
 
-        if (currentCount != null && currentCount > AuthConstants.MAX_OTP_ATTEMPTS) {
-            handleRateLimitExceeded(phone);
+        // Check if this is a new request counter or increment existing one
+        Long currentCount = redisTemplate.opsForValue().increment(requestCountKey, 1);
+        if (currentCount == null) {
+            // Set a default value or handle the error
+            currentCount = 1L;
+            // Or log this unusual condition
         }
 
-        redisTemplate.expire(requestCountKey, AuthConstants.MAX_OTP_ATTEMPTS, TimeUnit.HOURS);
+        // If this is the first request in this time window, set expiration to 1 hour
+        if (currentCount == 1) {
+            redisTemplate.expire(requestCountKey, 1, TimeUnit.HOURS);
+        }
 
+        // Check if rate limit exceeded (more than 3 attempts within the hour)
+        if (currentCount > 3) {
+            handleRateLimitExceeded(phone);
+            return;
+        }
+
+        // Generate and store OTP
         String otp = generateSecureOTP();
         String otpKey = getOTPKey(phone);
-
         redisTemplate.opsForValue().set(otpKey, otp, AuthConstants.OTP_EXPIRATION_MINUTES, TimeUnit.MINUTES);
 
-        sendSMS(phone, AuthConstants.OTP_MESSAGE_PREFIX + otp);
+        // Format message and send SMS
+        String formattedMessage = String.format(AuthConstants.OTP_MESSAGE_TEMPLATE, otp);
+        Result<String> result = smsService.sendSMS(formattedMessage, phone);
 
-        // Don't return the OTP - this is more secure
-        // Return success status instead
-        return "OTP_SENT";
+        if (!result.isSuccess()) {
+            // Consider masking part of the phone number for security
+            String maskedPhone = maskPhoneNumber(phone);
+            throw new RuntimeException("Failed to send OTP to phone: " + maskedPhone + ", error: " + result.getError());
+        }
     }
+
+    // Helper method to mask phone number
+    private String maskPhoneNumber(String phone) {
+        if (phone == null || phone.length() < 4) {
+            return "****";
+        }
+        return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 3);
+    }
+
 
     public boolean validateOTP(String phone, String otp) {
         validatePhoneNumber(phone);
@@ -136,7 +166,16 @@ public class OTPService {
     }
 
     private void sendSMS(String phone, String message) {
-        // Implement actual SMS sending logic
-        System.out.println("[SMS] To: " + phone + " | Message: " + message);
+
+        Result<String> result = smsService.sendSMS(message, phone);
+
+        if (result.isSuccess()) {
+            System.out.println("SMS Sent Successfully: " + result.getData());
+        } else {
+            System.out.println("SMS Sending Failed: " + result.getError());
+        }
+
+
+
     }
 }

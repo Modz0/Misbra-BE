@@ -33,3 +33,9 @@ build/
 .vscode/
 
 .env
+
+id_rsa_github
+*.p12
+*.pem
+*.crt
+*.key

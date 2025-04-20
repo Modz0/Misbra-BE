@@ -39,7 +39,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
 
-    public String register(PhoneRequestDTO phoneRequest) {
+    public void register(PhoneRequestDTO phoneRequest) {
         if (userService.existsByPhone(phoneRequest.getPhone())) {
             List<ValidationErrorDTO> errors = new ArrayList<>();
             errors.add(new ValidationErrorDTO(
@@ -50,7 +50,8 @@ public class AuthService {
         }
 
         // Generate OTP for phone verification before saving user
-       return  otpService.generateOTP(phoneRequest.getPhone());
+         otpService.generateOTP(phoneRequest.getPhone());
+
     }
 
     public AuthResponseDTO verifyRegistrationOTP(RegisterRequestDTO request) {
@@ -74,7 +75,7 @@ public class AuthService {
         return generateAuthResponse(userMapper.toEntity(user));
     }
 
-    public String generateLoginOtp(PhoneRequestDTO request) {
+    public void generateLoginOtp(PhoneRequestDTO request) {
 
 
         // Find or create user
@@ -90,7 +91,7 @@ public class AuthService {
             exceptionUtils.throwValidationException(errors);
 
               }
-       return otpService.generateOTP(request.getPhone());
+        otpService.generateOTP(request.getPhone());
 
     }
 
