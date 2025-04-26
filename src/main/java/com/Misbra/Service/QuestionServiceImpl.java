@@ -329,12 +329,9 @@ public class QuestionServiceImpl implements QuestionService {
         // Add category criteria
         query.addCriteria(Criteria.where("category").is(categoryId));
 
-        if(questionType.equals(QuestionType.PAYED)){
-            query.addCriteria(Criteria.where("questionType").in(questionType,QuestionType.FREE));
 
-        }else {
-            query.addCriteria(Criteria.where("questionType").is(questionType));
-        }
+        query.addCriteria(Criteria.where("questionType").is(questionType));
+
 
         // Add sorting by creation date
         query.with(Sort.by(Sort.Direction.DESC, "createdAt"));

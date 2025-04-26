@@ -63,7 +63,7 @@ public class RateLimitService {
      * Create a new user-based rate limiter bucket: 5 requests per hour
      */
     private Bucket createUserRateLimiterBucket() {
-        Bandwidth limit = Bandwidth.classic(5, Refill.greedy(5, Duration.ofHours(1)));
+        Bandwidth limit = Bandwidth.classic(5, Refill.greedy(5, Duration.ofSeconds(1)));
         return Bucket4j.builder()
                 .addLimit(limit)
                 .build();
