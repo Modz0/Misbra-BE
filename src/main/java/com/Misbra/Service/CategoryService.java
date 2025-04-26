@@ -2,6 +2,7 @@ package com.Misbra.Service;
 
 import com.Misbra.DTO.CategoryDTO;
 import com.Misbra.Entity.Category;
+import com.Misbra.Enum.QuestionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,7 +13,7 @@ import java.util.Optional;
 
 public interface CategoryService {
     Page<CategoryDTO> getAllCategories(Pageable pageable);
-    Page<CategoryDTO> getAllCategoriesForUser(Pageable pageable,String userId);
+    Page<CategoryDTO> getAllCategoriesForUser(Pageable pageable, String userId, QuestionType questionType);
     CategoryDTO getCategoryById(String id);
     List<CategoryDTO> getListOfCategories (List<String> categoryIds);
     CategoryDTO createCategory(CategoryDTO categoryDTO ) ;

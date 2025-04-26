@@ -30,7 +30,6 @@ public class CategoryServiceImp implements CategoryService {
     private final CategoryMapper categoryMapper;
     private final PhotoService photoService;
     private final QuestionService questionService;
-    private final UserService userService;
 
     @Autowired
     public CategoryServiceImp(CategoryRepository categoryRepository, CategoryMapper categoryMapper, PhotoService photoService, QuestionService questionService, UserService userService) {
@@ -38,7 +37,6 @@ public class CategoryServiceImp implements CategoryService {
         this.categoryMapper = categoryMapper;
         this.photoService = photoService;
         this.questionService = questionService;
-        this.userService = userService;
     }
 
     @Override
@@ -74,15 +72,7 @@ public class CategoryServiceImp implements CategoryService {
     }
 
     @Override
-    public Page<CategoryDTO> getAllCategoriesForUser(Pageable pageable, String userId) {
-
-        QuestionType questionType;
-        //if a user Has Payed game set the type to Paid
-        if(userService.getRemainingGames(userId) > 0) {
-            questionType = QuestionType.PAYED;
-        } else {
-            questionType = QuestionType.FREE;
-        }
+    public Page<CategoryDTO> getAllCategoriesForUser(Pageable pageable, String userId,QuestionType questionType) {
 
 
         // Get paginated data directly from repository
