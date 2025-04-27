@@ -1,8 +1,11 @@
 package com.Misbra.Entity;
 
+import com.Misbra.Enum.PromoCodeType;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.Instant;
 
 @Data
 @Builder
@@ -18,5 +21,10 @@ public class PromoCode {
     private String bundleId;            // if not null, discount applies to a specific bundle only
     private boolean active;
     private boolean used;
+    private Instant validFrom;
+    private Instant validTo;
+    private PromoCodeType promoCodeType;
+    private int maxUses;
+    private int currentUses;
 
 }

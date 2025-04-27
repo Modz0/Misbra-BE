@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PurchaseBundleRequest {
+public class PurchaseBundleRequestDTO {
 
     private String bundleId ;
     private  String promoCode ;

@@ -1,5 +1,6 @@
 package com.Misbra.Exception.Utils;
 
+import com.Misbra.Exception.PaymentException;
 import com.Misbra.Exception.Validation.ValidationErrorDTO;
 import com.Misbra.Exception.ValidationException;
 import org.springframework.stereotype.Component;
@@ -23,4 +24,9 @@ public class ExceptionUtils {
     public void throwValidationException(String exceptionCode, List<ValidationErrorDTO> errors) {
         throw new ValidationException(exceptionCode, errors);
     }
+    public void throwPaymentException(List<ValidationErrorDTO> errors) {
+        throw new PaymentException(errors);
+    }
+
+
 }

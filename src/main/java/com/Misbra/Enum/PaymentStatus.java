@@ -6,9 +6,11 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum PaymentStatus {
-    IN_PROGRESS(1, "free question"),
-    COMPLETED(2, "Payed question"),
-    FAILED(3, "Payed question");
+    IN_PROGRESS(1, "In progress Transaction"),
+    COMPLETED(2, "Completed Transaction"),
+    FAILED(3, "Failed  transaction"),
+    CANCELED(4, "Canceled transaction");
+
 
 
     private final int code;

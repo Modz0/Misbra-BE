@@ -40,9 +40,8 @@ public class PromoCodeController {
                     .body("Rate limit exceeded for user: " + user.getUserId());
         }
 
-        Optional<PromoCodeDTO> promoDto = promoCodeService.validatePromoCode(user.getUserId(), code, bundleId);
-        return promoDto.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        PromoCodeDTO promoDto = promoCodeService.validatePromoCode(user.getUserId(), code, bundleId);
+        return ResponseEntity.ok(promoDto);
     }
 
     @PostMapping("/add")

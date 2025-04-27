@@ -1,9 +1,12 @@
 package com.Misbra.DTO;
 
 
+import com.Misbra.Enum.PromoCodeType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -11,11 +14,16 @@ import lombok.NoArgsConstructor;
 public class PromoCodeDTO {
 
     private String promoId;
-    private String code;                // The actual text code (e.g. "RAMADAN2025")
-    private Double discountPercentage;  // e.g. 0.2 for 20% discount
-    private boolean freeExtraSession;   // if true, add +1 (or more) free session
-    private String bundleId;            // if not null, discount applies to a specific bundle only
+    private String code;
+    private Double discountPercentage;
+    private boolean freeExtraSession;
+    private String bundleId;
     private boolean active;
     private boolean used;
+    private Instant validFrom;
+    private Instant validTo;
+    private PromoCodeType promoCodeType;
+    private int maxUses;
+    private int currentUses;
 
 }

@@ -99,24 +99,9 @@ public class UserServiceImp implements UserService {
      */
     @Override
     public UserDTO updateUser(UserDTO user) {
-        User existingUser = userRepository.findByEmail(user.getEmail())
-                .orElseGet(() -> {
-                    List<ValidationErrorDTO> errors = new ArrayList<>();
-                    errors.add(new ValidationErrorDTO(
-                            AuthMessageKeys.USER_NOT_FOUND,
-                            new String[]{user.getPhone()}
-                    ));
-                    exceptionUtils.throwValidationException(errors);
-                    return null;
-                });
-        existingUser.setEmail(user.getEmail());
-        existingUser.setFirstName(user.getFirstName());
-        existingUser.setLastName(user.getLastName());
-        existingUser.setPhone(user.getPhone());
-        existingUser.setEnabled(user.isEnabled());
-        existingUser.setRole(user.getRole());
-        userRepository.save(existingUser);
-        return userMapper.toDTO(existingUser);
+        userRepository.save(userMapper.toEntity(user));
+
+        return user;
     }
 
     /**
