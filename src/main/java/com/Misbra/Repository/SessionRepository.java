@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface SessionRepository extends MongoRepository<Session,String> {
     List<Session> findSessionsByUserId(String userId);
+    List<Session> findSessionsByUserIdOrderByUpdatedAtDesc(String userId);
 
 }

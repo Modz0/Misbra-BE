@@ -77,7 +77,8 @@ public interface SessionService {
      * @return the updated SessionDTO
      */
 
-    SessionDTO answerQuestion(String sessionId, String questionId, String teamId ,SessionDTO session);
+    SessionDTO answerQuestion(String sessionId, String questionId, String teamId,
+                              List<TeamPowerup> team1Powerups, List<TeamPowerup> team2Powerups);
 
 
     /**

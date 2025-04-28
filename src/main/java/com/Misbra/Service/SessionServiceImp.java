@@ -1,6 +1,7 @@
 package com.Misbra.Service;
 
 import com.Misbra.Component.SessionQuestions;
+import com.Misbra.Component.TeamPowerup;
 import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.DTO.SessionDTO;
 import com.Misbra.Entity.Session;
@@ -73,7 +74,7 @@ public class SessionServiceImp implements SessionService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID cannot be null or empty");
         }
 
-        List<Session> sessions = sessionRepository.findSessionsByUserId(userId);
+        List<Session> sessions = sessionRepository.findSessionsByUserIdOrderByUpdatedAtDesc(userId);
         return sessions.stream()
                 .map(sessionMapper::toDTO)
                 .collect(Collectors.toList());
@@ -155,11 +156,12 @@ public class SessionServiceImp implements SessionService {
 
         return usedPowerupsByTeam;
     }
-
     @Override
-    public SessionDTO answerQuestion(String sessionId, String questionId, String teamId, SessionDTO session) {
-        Map<String, PowerupType> usedPowerupsByTeam = disableUsedPowerups(session);
-        Session sessionEntity = sessionMapper.toEntity(session);
+    public SessionDTO answerQuestion(String sessionId, String questionId, String teamId,
+                                     List<TeamPowerup> team1Powerups, List<TeamPowerup> team2Powerups) {
+        // Get the session from the repository
+        Session sessionEntity = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
 
         // Find the question in any category
         SessionQuestions foundQuestion = null;
@@ -177,35 +179,82 @@ public class SessionServiceImp implements SessionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found in session");
         }
 
+        // Process powerups and mark active ones as used
+        Map<String, PowerupType> activePowerupsByTeam = new HashMap<>();
+
+        // Update the session with the provided powerups
+        sessionEntity.setTeam1Powerups(team1Powerups);
+        sessionEntity.setTeam2Powerups(team2Powerups);
+
+        // Check team1's active powerups
+        team1Powerups.stream()
+                .filter(p -> p.isActive() && !p.isUsed())
+                .findFirst()
+                .ifPresent(p -> {
+                    p.setUsed(true); // Mark as used
+                    activePowerupsByTeam.put(sessionEntity.getTeam1name(), p.getType());
+                });
+
+        // Check team2's active powerups
+        team2Powerups.stream()
+                .filter(p -> p.isActive() && !p.isUsed())
+                .findFirst()
+                .ifPresent(p -> {
+                    p.setUsed(true); // Mark as used
+                    activePowerupsByTeam.put(sessionEntity.getTeam2name(), p.getType());
+                });
+
+        // Update the session entity with the updated powerups
+        sessionEntity.setTeam1Powerups(team1Powerups);
+        sessionEntity.setTeam2Powerups(team2Powerups);
+
         // Determine canonical team names
         String team1 = sessionEntity.getTeam1name();
         String team2 = sessionEntity.getTeam2name();
         boolean isTeam1 = teamId.equalsIgnoreCase(team1);
         boolean isTeam2 = teamId.equalsIgnoreCase(team2);
 
+        int basePoints = foundQuestion.getPointsAwarded();
+
         // Process valid team answer
         if (isTeam1 || isTeam2) {
             foundQuestion.setAnswered(true);
-            String canonicalTeamName = isTeam1 ? team1 : team2;
-            foundQuestion.setAnsweredByTeam(canonicalTeamName);
+            String answeringTeam = isTeam1 ? team1 : team2;
+            foundQuestion.setAnsweredByTeam(answeringTeam);
 
-            int basePoints = foundQuestion.getPointsAwarded();
             int pointsAwarded = basePoints;
-            String opposingTeam = isTeam1 ? team2 : team1;
 
-            // Handle answering team's powerups
-            if (usedPowerupsByTeam.containsKey(canonicalTeamName)) {
-                if (usedPowerupsByTeam.get(canonicalTeamName) == PowerupType.DOUBLE_OR_MINUS) {
+            // Handle DOUBLE_OR_MINUS for Team 1
+            if (activePowerupsByTeam.containsKey(team1) &&
+                    activePowerupsByTeam.get(team1) == PowerupType.DOUBLE_OR_MINUS) {
+                // If Team 1 answered, they get double points
+                if (isTeam1) {
                     pointsAwarded *= 2;
+                }
+                // If Team 2 answered or no one answered, Team 1 gets penalized
+                else {
+                    sessionEntity.setTeam1score(sessionEntity.getTeam1score() - basePoints);
                 }
             }
 
-            // Handle opposing team's powerups
-            if (usedPowerupsByTeam.containsKey(opposingTeam)) {
-                PowerupType opposingPowerup = usedPowerupsByTeam.get(opposingTeam);
-                if (opposingPowerup == PowerupType.MINUS_FIFTY_PERCENT) {
-                    pointsAwarded = (int) Math.round(pointsAwarded * 0.5);
+            // Handle DOUBLE_OR_MINUS for Team 2
+            if (activePowerupsByTeam.containsKey(team2) &&
+                    activePowerupsByTeam.get(team2) == PowerupType.DOUBLE_OR_MINUS) {
+                // If Team 2 answered, they get double points
+                if (isTeam2) {
+                    pointsAwarded *= 2;
                 }
+                // If Team 1 answered or no one answered, Team 2 gets penalized
+                else {
+                    sessionEntity.setTeam2score(sessionEntity.getTeam2score() - basePoints);
+                }
+            }
+
+            // Handle MINUS_FIFTY_PERCENT powerups
+            String nonAnsweringTeam = isTeam1 ? team2 : team1;
+            if (activePowerupsByTeam.containsKey(nonAnsweringTeam) &&
+                    activePowerupsByTeam.get(nonAnsweringTeam) == PowerupType.MINUS_FIFTY_PERCENT) {
+                pointsAwarded = (int) Math.round(pointsAwarded * 0.5);
             }
 
             // Update answering team's score
@@ -214,31 +263,19 @@ public class SessionServiceImp implements SessionService {
             } else {
                 sessionEntity.setTeam2score(sessionEntity.getTeam2score() + pointsAwarded);
             }
-
-            // Handle opposing team's DOUBLE_OR_MINUS penalty (only penalize, no bonus)
-            if (usedPowerupsByTeam.containsKey(opposingTeam) &&
-                    usedPowerupsByTeam.get(opposingTeam) == PowerupType.DOUBLE_OR_MINUS) {
-                // Remove base points from opposing team
-                if (opposingTeam.equals(team1)) {
-                    sessionEntity.setTeam1score(sessionEntity.getTeam1score() - basePoints);
-                } else {
-                    sessionEntity.setTeam2score(sessionEntity.getTeam2score() - basePoints);
-                }
-                // No bonus points added to the answering team
-            }
         } else {
             // No valid team answered
             foundQuestion.setAnswered(true);
             foundQuestion.setAnsweredByTeam("NO ONE");
 
             // Apply DOUBLE_OR_MINUS penalties for both teams
-            if (usedPowerupsByTeam.containsKey(team1) &&
-                    usedPowerupsByTeam.get(team1) == PowerupType.DOUBLE_OR_MINUS) {
-                sessionEntity.setTeam1score(sessionEntity.getTeam1score() - foundQuestion.getPointsAwarded());
+            if (activePowerupsByTeam.containsKey(team1) &&
+                    activePowerupsByTeam.get(team1) == PowerupType.DOUBLE_OR_MINUS) {
+                sessionEntity.setTeam1score(sessionEntity.getTeam1score() - basePoints);
             }
-            if (usedPowerupsByTeam.containsKey(team2) &&
-                    usedPowerupsByTeam.get(team2) == PowerupType.DOUBLE_OR_MINUS) {
-                sessionEntity.setTeam2score(sessionEntity.getTeam2score() - foundQuestion.getPointsAwarded());
+            if (activePowerupsByTeam.containsKey(team2) &&
+                    activePowerupsByTeam.get(team2) == PowerupType.DOUBLE_OR_MINUS) {
+                sessionEntity.setTeam2score(sessionEntity.getTeam2score() - basePoints);
             }
         }
 
@@ -251,6 +288,7 @@ public class SessionServiceImp implements SessionService {
         Session updatedSession = sessionRepository.save(sessionEntity);
         return sessionMapper.toDTO(updatedSession);
     }
+
 
     @Override
     public boolean deleteSession(String id) {

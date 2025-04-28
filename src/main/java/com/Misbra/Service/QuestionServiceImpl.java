@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
@@ -223,54 +224,44 @@ public class QuestionServiceImpl implements QuestionService {
         return questions.map(questionMapper::toDTO);
     }
 
-
-
     @Override
     public List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty, QuestionType questionType) {
         // Get list of questions the user has already answered
         List<String> answeredQuestionIds = userService.getAnsweredQuestions(userId);
 
+        // Create criteria for the query
+        Criteria criteria = new Criteria();
+        List<Criteria> criteriaList = new ArrayList<>();
 
-        // Create query to find questions not in the answered list
-        Query query = new Query();
+        // Add filter for answered questions
         if (!answeredQuestionIds.isEmpty()) {
-            query.addCriteria(Criteria.where("questionId").nin(answeredQuestionIds));
+            criteriaList.add(Criteria.where("questionId").nin(answeredQuestionIds));
         }
 
         // Add category and difficulty criteria
-        query.addCriteria(Criteria.where("category").is(category));
-        query.addCriteria(Criteria.where("difficulty").is(difficulty));
-        if(questionType.equals(QuestionType.PAYED)){
-            query.addCriteria(Criteria.where("questionType").in(questionType));
+        criteriaList.add(Criteria.where("category").is(category));
+        criteriaList.add(Criteria.where("difficulty").is(difficulty));
 
-        }else {
-            query.addCriteria(Criteria.where("questionType").is(questionType));
+        // Add question type criteria
+        if(questionType.equals(QuestionType.PAYED)){
+            criteriaList.add(Criteria.where("questionType").in(questionType));
+        } else {
+            criteriaList.add(Criteria.where("questionType").is(questionType));
         }
 
-        // Add sorting and limit
-        query.with(Sort.by(Sort.Direction.DESC, "createdAt"));
-        query.limit(limit);
+        // Combine all criteria
+        if (!criteriaList.isEmpty()) {
+            criteria = criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+        }
 
-        List<Question> questions = mongoTemplate.find(query, Question.class);
+        // Use aggregation for random selection
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(criteria),
+                Aggregation.sample(limit)
+        );
 
-//        // If we don't have enough questions, get some from the already answered ones
-//        if (questions.size() < limit) {
-//            int remainingQuestions = limit - questions.size();
-//
-//            Query answeredQuery = new Query();
-//            answeredQuery.addCriteria(Criteria.where("category").is(category));
-//            answeredQuery.addCriteria(Criteria.where("difficulty").is(difficulty));
-//
-//            if (!answeredQuestionIds.isEmpty()) {
-//                answeredQuery.addCriteria(Criteria.where("questionId").in(answeredQuestionIds));
-//            }
-//
-//            answeredQuery.with(Sort.by(Sort.Direction.DESC, "createdAt"));
-//            answeredQuery.limit(remainingQuestions);
-//
-//            List<Question> answeredQuestions = mongoTemplate.find(answeredQuery, Question.class);
-//            questions.addAll(answeredQuestions);
-//        }
+        List<Question> questions = mongoTemplate.aggregate(
+                aggregation, "questions", Question.class).getMappedResults();
 
         // Gather all photo IDs (both question and answer)
         List<String> questionPhotoIds = questions.stream()
@@ -316,6 +307,7 @@ public class QuestionServiceImpl implements QuestionService {
 
         return questionDTOs;
     }
+
     @Override
     public int calculateAvailableGamesCount(String categoryId, String userId , QuestionType questionType) {
         List<String> answeredQuestionIds = userService.getAnsweredQuestions(userId);

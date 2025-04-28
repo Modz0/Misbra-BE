@@ -1,5 +1,6 @@
 package com.Misbra.Controller;
 
+import com.Misbra.Component.PowerupsRequest;
 import com.Misbra.Component.SessionQuestions;
 import com.Misbra.Component.TeamPowerup;
 import com.Misbra.DTO.SessionDTO;
@@ -140,10 +141,11 @@ public class SessionController {
     public ResponseEntity<SessionDTO> answerQuestion(
             @PathVariable String sessionId,
             @PathVariable String questionId,
-            @RequestBody SessionDTO session,
+            @RequestParam String teamId,
+             @RequestBody PowerupsRequest teamsPowerUps
 
-            @RequestParam String teamId) {
-        return ResponseEntity.ok(sessionService.answerQuestion(sessionId, questionId, teamId,session ));
+    ) {
+        return ResponseEntity.ok(sessionService.answerQuestion(sessionId, questionId, teamId,teamsPowerUps.getTeam1Powerups() ,teamsPowerUps.getTeam2Powerups()));
     }
 
     /**

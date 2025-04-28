@@ -18,17 +18,17 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "questions")
+@CompoundIndex(name = "category_difficulty_questionType_idx", def = "{'category': 1, 'difficulty': 1, 'questionType': 1}")
 public class Question {
     @Id
-    private String questionId;  // Already indexed automatically
+    private String questionId;
 
     @Indexed
-    private String category;    // Important for category-based queries
+    private String category;
 
     @Indexed
-    private Difficulty difficulty;  // For difficulty-based filtering
+    private Difficulty difficulty;
 
-    // Other fields that don't need indexing
     private String question;
     private String answer;
     private int points;

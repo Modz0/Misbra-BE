@@ -39,6 +39,7 @@ public class Session {
     private Map<String, Integer> powerups;
     private Map<String, List<SessionQuestions>> categoryQuestionsMap = new HashMap<>();
     private SessionType sessionType;
+
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate
