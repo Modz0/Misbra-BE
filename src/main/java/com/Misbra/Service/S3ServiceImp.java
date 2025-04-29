@@ -21,8 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class S3ServiceImp implements S3Service {
@@ -58,32 +57,37 @@ public class S3ServiceImp implements S3Service {
             throw new IllegalArgumentException("Reference ID cannot be null or empty.");
         }
 
+        // Get original file extension for reference
+        String originalFileExtension = getFileExtension(Objects.requireNonNull(file.getOriginalFilename()));
 
-        String fileExtension = getFileExtension(Objects.requireNonNull(file.getOriginalFilename()));
+        // Check if the file format is supported
+        validateImageFormat(originalFileExtension);
+
+        // Always use PNG extension for the stored file since we're converting
         String s3Key = String.format(
                 "%s/%s/%s.%s",
                 referenceType,
                 referenceId,
                 UUID.randomUUID(),
-                fileExtension
+                "png"  // Always using PNG format
         );
 
-        // 1. Resize the image
-        byte[] resizedBytes = resizeImage(file.getBytes(), fileExtension);
+        // Resize the image and convert to PNG
+        byte[] resizedPngBytes = resizeImage(file.getBytes(), originalFileExtension);
 
-        // 2. Upload the resized bytes to S3
+        // Upload the resized PNG bytes to S3
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(s3Key)
-                .contentType(file.getContentType())
+                .contentType("image/png")  // Always set content type as PNG
                 .build();
 
-        s3Client.putObject(request, RequestBody.fromBytes(resizedBytes));
+        s3Client.putObject(request, RequestBody.fromBytes(resizedPngBytes));
 
-        // 3. Generate a presigned URL valid for 7 days
+        // Generate a presigned URL valid for 7 days
         String imageUrl = generatePresignedUrl(s3Key);
 
-        // 4. Build a PhotoDTO
+        // Build a PhotoDTO
         PhotoDTO photo = new PhotoDTO();
         photo.setS3key(s3Key);
         photo.setUploadedDate(LocalDateTime.now());
@@ -94,6 +98,20 @@ public class S3ServiceImp implements S3Service {
         photo.setPresignedUrlExpiration(LocalDateTime.now().plusDays(7));
 
         return photo;
+    }
+
+    /**
+     * Validates if the image format is supported
+     */
+    private void validateImageFormat(String fileExtension) {
+        Set<String> supportedFormats = new HashSet<>(Arrays.asList(
+                "jpg", "jpeg", "png", "gif", "bmp", "webp"
+        ));
+
+        if (!supportedFormats.contains(fileExtension.toLowerCase())) {
+            throw new IllegalArgumentException("Unsupported image format: " + fileExtension +
+                    ". Supported formats are: " + String.join(", ", supportedFormats));
+        }
     }
 
     @Override
@@ -141,41 +159,59 @@ public class S3ServiceImp implements S3Service {
     }
 
     /**
-     * Resizes an image to 800x600 (max) while maintaining aspect ratio.
+     * Resizes an image and converts it to PNG format for consistent processing.
+     * Maintains aspect ratio while resizing to fit within standard dimensions.
+     */
+    /**
+     * Resizes an image and converts it to PNG format for consistent processing.
+     * Supports various formats including WebP.
      */
     private byte[] resizeImage(byte[] originalBytes, String fileExtension) throws IOException {
-        // Read as a BufferedImage
-        BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(originalBytes));
-        if (originalImage == null) {
-            throw new IOException("Could not read image data");
+        BufferedImage originalImage;
+
+        // Special handling for WebP format
+        if (fileExtension.equalsIgnoreCase("webp")) {
+            try {
+                // WebP handling using the WebP ImageIO reader
+                originalImage = ImageIO.read(new ByteArrayInputStream(originalBytes));
+                if (originalImage == null) {
+                    throw new IOException("Failed to read WebP image data");
+                }
+            } catch (Exception e) {
+                throw new IOException("Error processing WebP image: " + e.getMessage(), e);
+            }
+        } else {
+            // Standard format handling
+            originalImage = ImageIO.read(new ByteArrayInputStream(originalBytes));
+            if (originalImage == null) {
+                throw new IOException("Cannot read image data for format: " + fileExtension);
+            }
         }
 
+        // Calculate new dimensions maintaining aspect ratio
         int originalWidth = originalImage.getWidth();
         int originalHeight = originalImage.getHeight();
 
-        // Default to scaling by width
-        int newWidth = STANDARD_WIDTH;
-        int newHeight = (int) (((double) STANDARD_WIDTH / originalWidth) * originalHeight);
+        double widthRatio = (double) STANDARD_WIDTH / originalWidth;
+        double heightRatio = (double) STANDARD_HEIGHT / originalHeight;
+        double ratio = Math.min(widthRatio, heightRatio);
 
-        // If the new height is beyond the max, recalc based on height
-        if (newHeight > STANDARD_HEIGHT) {
-            newHeight = STANDARD_HEIGHT;
-            newWidth = (int) (((double) STANDARD_HEIGHT / originalHeight) * originalWidth);
-        }
+        int newWidth = (int) (originalWidth * ratio);
+        int newHeight = (int) (originalHeight * ratio);
 
-        // Create resized image
-        BufferedImage resized = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2d = resized.createGraphics();
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        // Create a new buffered image with the target dimensions
+        BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
 
-        g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
-        g2d.dispose();
+        // Draw the original image on the new one with scaling
+        Graphics2D g = resizedImage.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+        g.dispose();
 
-        // Convert back to byte array
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(resized, fileExtension, baos);
-        return baos.toByteArray();
+        // Write as PNG format
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        ImageIO.write(resizedImage, "png", outputStream);
+
+        return outputStream.toByteArray();
     }
 }
