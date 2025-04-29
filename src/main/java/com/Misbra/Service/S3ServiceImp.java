@@ -13,7 +13,10 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -63,26 +66,26 @@ public class S3ServiceImp implements S3Service {
         // Check if the file format is supported
         validateImageFormat(originalFileExtension);
 
-        // Always use PNG extension for the stored file since we're converting
+        // Now using WebP extension for the stored file for better compression
         String s3Key = String.format(
                 "%s/%s/%s.%s",
                 referenceType,
                 referenceId,
                 UUID.randomUUID(),
-                "png"  // Always using PNG format
+                "webp"  // Using WebP format instead of PNG
         );
 
-        // Resize the image and convert to PNG
-        byte[] resizedPngBytes = resizeImage(file.getBytes(), originalFileExtension);
+        // Resize the image and convert to WebP using our updated resizeImage method
+        byte[] resizedImageBytes = resizeImage(file.getBytes(), originalFileExtension);
 
-        // Upload the resized PNG bytes to S3
+        // Upload the resized WebP bytes to S3
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(s3Key)
-                .contentType("image/png")  // Always set content type as PNG
+                .contentType("image/webp")  // Set content type as WebP
                 .build();
 
-        s3Client.putObject(request, RequestBody.fromBytes(resizedPngBytes));
+        s3Client.putObject(request, RequestBody.fromBytes(resizedImageBytes));
 
         // Generate a presigned URL valid for 7 days
         String imageUrl = generatePresignedUrl(s3Key);
@@ -169,23 +172,14 @@ public class S3ServiceImp implements S3Service {
     private byte[] resizeImage(byte[] originalBytes, String fileExtension) throws IOException {
         BufferedImage originalImage;
 
-        // Special handling for WebP format
-        if (fileExtension.equalsIgnoreCase("webp")) {
-            try {
-                // WebP handling using the WebP ImageIO reader
-                originalImage = ImageIO.read(new ByteArrayInputStream(originalBytes));
-                if (originalImage == null) {
-                    throw new IOException("Failed to read WebP image data");
-                }
-            } catch (Exception e) {
-                throw new IOException("Error processing WebP image: " + e.getMessage(), e);
-            }
-        } else {
-            // Standard format handling
+        // Read the image regardless of format
+        try {
             originalImage = ImageIO.read(new ByteArrayInputStream(originalBytes));
             if (originalImage == null) {
-                throw new IOException("Cannot read image data for format: " + fileExtension);
+                throw new IOException("Failed to read image data for format: " + fileExtension);
             }
+        } catch (Exception e) {
+            throw new IOException("Error processing image: " + e.getMessage(), e);
         }
 
         // Calculate new dimensions maintaining aspect ratio
@@ -208,10 +202,32 @@ public class S3ServiceImp implements S3Service {
         g.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
         g.dispose();
 
-        // Write as PNG format
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ImageIO.write(resizedImage, "png", outputStream);
 
-        return outputStream.toByteArray();
+        // Always convert to WebP for better compression
+        try {
+            // Find a WebP writer
+            ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
+            ImageWriteParam writeParam = writer.getDefaultWriteParam();
+
+            // Set compression if supported
+            if (writeParam.canWriteCompressed()) {
+                writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                writeParam.setCompressionQuality(0.80f); // Adjust quality (0.0-1.0) - 0.80 is a good balance
+            }
+
+            writer.setOutput(ImageIO.createImageOutputStream(outputStream));
+            writer.write(null, new IIOImage(resizedImage, null, null), writeParam);
+            writer.dispose();
+
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            // Log the WebP conversion error
+            System.err.println("WebP conversion failed, falling back to PNG: " + e.getMessage());
+
+            // Fallback to PNG if WebP writing fails
+            ImageIO.write(resizedImage, "png", outputStream);
+            return outputStream.toByteArray();
+        }
     }
 }
