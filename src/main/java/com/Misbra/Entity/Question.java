@@ -36,6 +36,8 @@ public class Question {
     private String answerPhotoId;
     private QuestionType questionType;
 
+    private int answerRange;
+
     @CreatedDate
     private Instant createdAt;
 

@@ -21,6 +21,7 @@ public class QuestionDTO {
     private String questionThumbnailUrl;
     private String answerThumbnailUrl;
     private QuestionType questionType;
+    private int answerRange;
 
     // For client responses (doesn't include correct answer)
     public QuestionDTO hideAnswer() {

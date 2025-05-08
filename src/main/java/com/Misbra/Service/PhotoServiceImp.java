@@ -88,12 +88,19 @@ public class PhotoServiceImp implements PhotoService {
      */
     @Override
     public String getPresignedUrl(String photoId) {
-        PhotoDTO photo = findPhotoById(photoId);
-        if (isUrlExpired(photo)) {
-            regenerateUrl(photo);
+        try {
+            PhotoDTO photo = findPhotoById(photoId);
+            if (isUrlExpired(photo)) {
+                regenerateUrl(photo);
+            }
+            return photo.getPresignedUrl();
+        } catch (Exception e) {
+            // Photo not found or other error occurred
+            // Instead of propagating the exception, return null
+            return null;
         }
-        return photo.getPresignedUrl();
     }
+
 
     /**
      * Retrieves a mapping of photo IDs to their presigned URLs in bulk.
