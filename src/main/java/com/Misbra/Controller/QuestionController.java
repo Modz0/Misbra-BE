@@ -4,7 +4,11 @@ import com.Misbra.DTO.QuestionDTO;
 import com.Misbra.Entity.User;
 import com.Misbra.Enum.Difficulty;
 import com.Misbra.Enum.QuestionType;
+import com.Misbra.Enum.RoleEnum;
+import com.Misbra.Exception.Utils.ExceptionUtils;
+import com.Misbra.Exception.Validation.ValidationErrorDTO;
 import com.Misbra.Service.QuestionService;
+import com.Misbra.Utils.AuthMessageKeys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,10 +30,12 @@ import java.util.Map;
 public class QuestionController {
 
     private final QuestionService questionService;
+    private final ExceptionUtils exceptionUtils ;
 
     @Autowired
-    public QuestionController(QuestionService questionService) {
+    public QuestionController(QuestionService questionService, ExceptionUtils exceptionUtils) {
         this.questionService = questionService;
+        this.exceptionUtils = exceptionUtils;
     }
 
     @GetMapping
@@ -37,11 +44,12 @@ public class QuestionController {
             @RequestParam(defaultValue = "9") int size,
             @RequestParam(required = false) List<String> selectedCategory,
             @RequestParam(required = false) List<Difficulty> selectedDifficulty,
-            @RequestParam(required = false) List<QuestionType> selectedQuestionType
+            @RequestParam(required = false) List<QuestionType> selectedQuestionType,
+            @RequestParam(required = false) List<Boolean> selectedVerificationStatus
 
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(questionService.getAllQuestions(pageable,selectedCategory,selectedDifficulty,selectedQuestionType));
+        return ResponseEntity.ok(questionService.getAllQuestions(pageable,selectedCategory,selectedDifficulty,selectedQuestionType,selectedVerificationStatus));
     }
 
     @GetMapping("/{id}")
@@ -109,6 +117,21 @@ public class QuestionController {
         questionService.clearQuestionRecord(user.getUserId());
         return ResponseEntity.ok("OK");
     }
+
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<QuestionDTO> approveQuestion(@AuthenticationPrincipal User user,@PathVariable String id) {
+        if(!user.getRole().equals(RoleEnum.ADMIN)){
+            List<ValidationErrorDTO> errors = new ArrayList<>();
+            errors.add(new ValidationErrorDTO(
+                    AuthMessageKeys.NOT_AUTHORIZED,
+                    new String[]{user.getPhone()}
+            ));
+            exceptionUtils.throwValidationException(errors);
+        }
+        QuestionDTO approvedQuestion = questionService.approveQuestion(id);
+        return ResponseEntity.ok(approvedQuestion);
+    }
+
 
 
 }

@@ -333,17 +333,17 @@ public class SessionServiceImp implements SessionService {
             List<String> allQuestionIds = new ArrayList<>();
 
             // Get easy questions (2)
-            List<QuestionDTO> easyQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, Difficulty.EASY,sessionQuestionType);
+            List<QuestionDTO> easyQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, Difficulty.EASY,sessionQuestionType,true);
             addQuestionsToSession(sessionId, easyQuestions, category, Difficulty.EASY);
             allQuestionIds.addAll(easyQuestions.stream().map(QuestionDTO::getQuestionId).toList());
 
             // Get medium questions (4)
-            List<QuestionDTO> mediumQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 4, Difficulty.MEDIUM,sessionQuestionType);
+            List<QuestionDTO> mediumQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 4, Difficulty.MEDIUM,sessionQuestionType,true);
             addQuestionsToSession(sessionId, mediumQuestions, category, Difficulty.MEDIUM);
             allQuestionIds.addAll(mediumQuestions.stream().map(QuestionDTO::getQuestionId).toList());
 
             // Get hard questions (2)
-            List<QuestionDTO> hardQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, Difficulty.HARD,sessionQuestionType);
+            List<QuestionDTO> hardQuestions = questionService.getUnansweredQuestionsByCategory(userId, category, 2, Difficulty.HARD,sessionQuestionType,true);
             addQuestionsToSession(sessionId, hardQuestions, category, Difficulty.HARD);
             allQuestionIds.addAll(hardQuestions.stream().map(QuestionDTO::getQuestionId).toList());
 

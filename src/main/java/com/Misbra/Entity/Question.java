@@ -37,6 +37,8 @@ public class Question {
     private QuestionType questionType;
 
     private int answerRange;
+    private boolean verified = false;
+
 
     @CreatedDate
     private Instant createdAt;

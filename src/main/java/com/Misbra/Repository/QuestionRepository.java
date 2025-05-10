@@ -17,4 +17,6 @@ public interface QuestionRepository extends MongoRepository<Question, String> {
     Page<Question> findByCategory(String category, Pageable pageable);
     /* utility */
     List<Question> findQuestionByCategory(String category);
+
+
 }

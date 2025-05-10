@@ -1,9 +1,7 @@
 package com.Misbra.Service;
 
-import com.Misbra.DTO.CategoryDTO;
 import com.Misbra.DTO.PhotoDTO;
 import com.Misbra.DTO.QuestionDTO;
-import com.Misbra.Entity.Category;
 import com.Misbra.Entity.Question;
 import com.Misbra.Enum.Difficulty;
 import com.Misbra.Enum.QuestionType;
@@ -22,7 +20,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -56,7 +53,9 @@ public class QuestionServiceImpl implements QuestionService {
     public Page<QuestionDTO> getAllQuestions(Pageable pageable,
                                              List<String>       selectedCategory,
                                              List<Difficulty>   selectedDifficulty,
-                                             List<QuestionType> selectedQuestionType) {
+                                             List<QuestionType> selectedQuestionType,
+                                             List<Boolean> selectedVerificationStatus
+    ) {
 
         /* ---------- build the query dynamically ---------- */
         Query query = new Query();
@@ -72,6 +71,10 @@ public class QuestionServiceImpl implements QuestionService {
         if (selectedQuestionType != null && !selectedQuestionType.isEmpty()) {
             query.addCriteria(Criteria.where("questionType").in(selectedQuestionType));
         }
+        if(selectedVerificationStatus != null && !selectedVerificationStatus.isEmpty()){
+            query.addCriteria(Criteria.where("verified").in(selectedVerificationStatus));
+        }
+
 
         long total = mongoTemplate.count(query, Question.class);   // total before pagination
         query.with(pageable);                                      // apply limit / skip
@@ -225,7 +228,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty, QuestionType questionType) {
+    public List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty, QuestionType questionType,Boolean isVerified) {
         // Get list of questions the user has already answered
         List<String> answeredQuestionIds = userService.getAnsweredQuestions(userId);
 
@@ -240,6 +243,9 @@ public class QuestionServiceImpl implements QuestionService {
 
         // Add category and difficulty criteria
         criteriaList.add(Criteria.where("category").is(category));
+
+        criteriaList.add(Criteria.where("verified").is(isVerified));
+
         criteriaList.add(Criteria.where("difficulty").is(difficulty));
 
         // Add question type criteria
@@ -309,7 +315,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public int calculateAvailableGamesCount(String categoryId, String userId , QuestionType questionType) {
+    public int calculateAvailableGamesCount(String categoryId, String userId , QuestionType questionType,Boolean isVerified) {
         List<String> answeredQuestionIds = userService.getAnsweredQuestions(userId);
 
         // Create query to find questions not in the answered list
@@ -321,6 +327,7 @@ public class QuestionServiceImpl implements QuestionService {
         // Add category criteria
         query.addCriteria(Criteria.where("category").is(categoryId));
 
+        query.addCriteria(Criteria.where("verified").is(isVerified));
 
         query.addCriteria(Criteria.where("questionType").is(questionType));
 
@@ -405,6 +412,16 @@ public class QuestionServiceImpl implements QuestionService {
 
         return questions.stream().map(questionMapper::toDTO).collect(Collectors.toList());
      }
+
+    @Override
+    public QuestionDTO approveQuestion(String questionId) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new RuntimeException("Category not found with id: " + questionId));
+
+        question.setVerified(true);
+        Question savedQuestion = questionRepository.save(question);
+        return questionMapper.toDTO(savedQuestion);
+    }
 
 
 }

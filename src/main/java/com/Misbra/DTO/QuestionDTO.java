@@ -22,6 +22,8 @@ public class QuestionDTO {
     private String answerThumbnailUrl;
     private QuestionType questionType;
     private int answerRange;
+    private boolean verified;
+
 
     // For client responses (doesn't include correct answer)
     public QuestionDTO hideAnswer() {

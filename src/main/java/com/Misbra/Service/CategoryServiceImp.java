@@ -84,7 +84,7 @@ public class CategoryServiceImp implements CategoryService {
                 .map(categoryMapper::toDTO)
                 .collect(Collectors.toList());
 
-        categoryDTOs.forEach(categoryDTO -> {categoryDTO.setNumberOfGamesLeft(questionService.calculateAvailableGamesCount(categoryDTO.getCategoryId(), userId,questionType));});
+        categoryDTOs.forEach(categoryDTO -> {categoryDTO.setNumberOfGamesLeft(questionService.calculateAvailableGamesCount(categoryDTO.getCategoryId(), userId,questionType,true));});
 
 
         // Gather all thumbnail IDs from this page only

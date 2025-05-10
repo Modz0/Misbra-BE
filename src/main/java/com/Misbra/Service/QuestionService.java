@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface QuestionService {
-    Page<QuestionDTO> getAllQuestions(  Pageable pageable ,List<String> selectedCategory, List<Difficulty> selectedDifficulty, List<QuestionType> questionTypes);
+    Page<QuestionDTO> getAllQuestions(  Pageable pageable ,List<String> selectedCategory, List<Difficulty> selectedDifficulty, List<QuestionType> questionTypes,List<Boolean> selectedVerificationStatus);
 
     QuestionDTO getQuestionById(String id);
 
@@ -26,9 +26,9 @@ public interface QuestionService {
     Page<QuestionDTO> getQuestionsByCategory(String category, Pageable pageable);
 
 
-    List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty, QuestionType questionType);
+    List<QuestionDTO> getUnansweredQuestionsByCategory(String userId, String category, int limit, Difficulty difficulty, QuestionType questionType,Boolean isVerified);
 
-    int calculateAvailableGamesCount(String categoryId, String userId , QuestionType questionType);
+    int calculateAvailableGamesCount(String categoryId, String userId , QuestionType questionType,Boolean isVerified);
 
     void clearQuestionRecord(String userId);
     String uploadQuestionPhotos(String questionId, MultipartFile file) throws IOException;
@@ -39,5 +39,6 @@ public interface QuestionService {
     void setAnswerThumbnail(String questionId, String photoId);
 
     List<QuestionDTO> findQuestionByCategory (String category);
+    QuestionDTO approveQuestion(String questionId);
 
 }
