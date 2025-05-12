@@ -29,4 +29,9 @@ public final class BusinessMessageKeys {
     public static final String PAYMENT_ERROR = "BUSS-ERR-0018";
     public static final String BUNDLE_NOT_FOUND = "BUSS-ERR-0019";
 
+    // Question report error codes
+    public static final String QUESTION_NOT_FOUND = "BUSS-ERR-0020";
+    public static final String REPORT_NOT_FOUND = "BUSS-ERR-0021";
+    public static final String UNAUTHORIZED_ACCESS = "BUSS-ERR-0022";
+    public static final String REPORT_ALREADY_REVIEWED = "BUSS-ERR-0023";
 }
